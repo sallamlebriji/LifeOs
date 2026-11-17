@@ -1,0 +1,849 @@
+// LifeOS relational schema — MySQL 8.0+ (InnoDB, utf8mb4).
+// Conventions:
+//   * UUID v4 primary keys stored as CHAR(36).
+//   * All DateTime values are stored in UTC (DATETIME(3)); the user's IANA timezone
+//     is stored alongside where wall-clock semantics matter.
+//   * Every user-owned row carries userId and is indexed by it (data isolation).
+//   * `version` columns support optimistic concurrency (AI proposals, sync).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TimeOfDay {
+  MORNING
+  AFTERNOON
+  EVENING
+  NIGHT
+  ANY
+}
+
+enum CategoryKind {
+  WORK
+  PERSONAL
+  SPORT
+  STUDY
+  TRAVEL
+  HEALTH
+  SOCIAL
+  OTHER
+}
+
+enum TokenPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+enum GoalLevel {
+  ANNUAL
+  MONTHLY
+  WEEKLY
+  DAILY
+}
+
+enum GoalStatus {
+  NOT_STARTED
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+enum ProjectStatus {
+  PLANNED
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  ARCHIVED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum SchedulingMode {
+  FLEXIBLE
+  FIXED
+}
+
+enum TaskScheduleStatus {
+  PLANNED
+  DONE
+  MISSED
+  CANCELLED
+}
+
+enum EventSource {
+  MANUAL
+  AI
+  EXTERNAL
+}
+
+enum EventFlexibility {
+  FIXED
+  FLEXIBLE
+}
+
+enum AvailabilityKind {
+  WORKING_HOURS
+  UNAVAILABLE
+  PREFERRED
+  PROTECTED_FREE_TIME
+}
+
+enum HabitFrequency {
+  DAILY
+  WEEKLY
+  CUSTOM
+}
+
+enum StudySessionKind {
+  LEARNING
+  REVISION
+  EXAM
+}
+
+enum TripStatus {
+  PLANNING
+  BOOKED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum ProposalStatus {
+  PENDING
+  APPLIED
+  REJECTED
+  EXPIRED
+  SUPERSEDED
+  FAILED
+}
+
+enum PlanningChangeType {
+  CREATE_EVENT
+  UPDATE_EVENT
+  DELETE_EVENT
+  SCHEDULE_TASK
+  UNSCHEDULED
+}
+
+enum PlanningChangeDecision {
+  PROPOSED
+  ACCEPTED
+  MODIFIED
+  REJECTED
+}
+
+enum AIMessageRole {
+  SYSTEM
+  USER
+  ASSISTANT
+  TOOL
+}
+
+enum NotificationType {
+  TASK_REMINDER
+  EVENT_REMINDER
+  HABIT_REMINDER
+  DEADLINE_ALERT
+  AI_SUGGESTION
+  SYSTEM
+}
+
+enum NotificationChannel {
+  IN_APP
+  PUSH
+  EMAIL
+}
+
+enum IntegrationProvider {
+  GOOGLE_CALENDAR
+  APPLE_CALENDAR
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
+enum SyncDirection {
+  IMPORT
+  EXPORT
+  BIDIRECTIONAL
+}
+
+enum SyncStatus {
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+// ─── Identity ────────────────────────────────────────────────────────────
+
+model User {
+  id              String    @id @default(uuid()) @db.Char(36)
+  email           String    @unique @db.VarChar(254)
+  passwordHash    String    @db.VarChar(255)
+  displayName     String    @db.VarChar(80)
+  avatarUrl       String?   @db.VarChar(500)
+  role            UserRole  @default(USER)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  preferences       UserPreferences?
+  sessions          Session[]
+  tokens            VerificationToken[]
+  auditLogs         AuditLog[]
+  categories        Category[]
+  goals             Goal[]
+  projects          Project[]
+  tasks             Task[]
+  taskSchedules     TaskSchedule[]
+  events            CalendarEvent[]
+  availabilityRules AvailabilityRule[]
+  habits            Habit[]
+  habitLogs         HabitLog[]
+  studySubjects     StudySubject[]
+  studySessions     StudySession[]
+  trips             Trip[]
+  proposals         PlanningProposal[]
+  aiConversations   AIConversation[]
+  notifications     Notification[]
+  integrations      Integration[]
+}
+
+model UserPreferences {
+  id                    String    @id @default(uuid()) @db.Char(36)
+  userId                String    @unique @db.Char(36)
+  timezone              String    @default("Africa/Casablanca") @db.VarChar(64)
+  locale                String    @default("en") @db.VarChar(10)
+  theme                 String    @default("system") @db.VarChar(10) // system | light | dark
+  weekStartsOn          Int       @default(1) @db.TinyInt // 0 = Sunday … 6 = Saturday
+  dayStartTime          String    @default("07:00") @db.Char(5) // HH:mm (local)
+  dayEndTime            String    @default("22:00") @db.Char(5)
+  workStartTime         String    @default("09:00") @db.Char(5)
+  workEndTime           String    @default("18:00") @db.Char(5)
+  workDays              Json // number[] of weekday indexes, e.g. [1,2,3,4,5]
+  bufferMinutes         Int       @default(10) @db.SmallInt
+  minSessionMinutes     Int       @default(25) @db.SmallInt
+  maxDailyFocusMinutes  Int       @default(480) @db.SmallInt
+  preferredFocusTime    TimeOfDay @default(MORNING)
+  schedulingWeights     Json? // overrides for scheduling-engine weights
+  notificationsEnabled  Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Refresh-token session. Only a SHA-256 hash of the opaque token is stored.
+/// Rotation: each refresh revokes the current row and creates a successor in
+/// the same `familyId`; reuse of a revoked token revokes the whole family.
+model Session {
+  id          String    @id @default(uuid()) @db.Char(36)
+  userId      String    @db.Char(36)
+  familyId    String    @db.Char(36)
+  tokenHash   String    @unique @db.Char(64)
+  userAgent   String?   @db.VarChar(255)
+  ipAddress   String?   @db.VarChar(45)
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  replacedById String?  @db.Char(36)
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+}
+
+/// Single-use tokens for email verification and password reset (hash only).
+model VerificationToken {
+  id         String       @id @default(uuid()) @db.Char(36)
+  userId     String       @db.Char(36)
+  purpose    TokenPurpose
+  tokenHash  String       @unique @db.Char(64)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+}
+
+/// Security- and business-relevant events (login, password change, proposal
+/// approval…). `metadata` must never contain secrets or raw tokens.
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Char(36)
+  userId     String?  @db.Char(36)
+  action     String   @db.VarChar(64)
+  entityType String?  @db.VarChar(64)
+  entityId   String?  @db.Char(36)
+  ipAddress  String?  @db.VarChar(45)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+// ─── Organisation ────────────────────────────────────────────────────────
+
+model Category {
+  id        String       @id @default(uuid()) @db.Char(36)
+  userId    String       @db.Char(36)
+  name      String       @db.VarChar(60)
+  kind      CategoryKind @default(OTHER)
+  color     String       @db.Char(7) // #RRGGBB
+  icon      String?      @db.VarChar(40)
+  sortOrder Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goals    Goal[]
+  projects Project[]
+  tasks    Task[]
+  events   CalendarEvent[]
+  habits   Habit[]
+
+  @@unique([userId, name])
+  @@index([userId, kind])
+}
+
+model Goal {
+  id           String     @id @default(uuid()) @db.Char(36)
+  userId       String     @db.Char(36)
+  parentId     String?    @db.Char(36) // e.g. weekly goal under a monthly goal
+  categoryId   String?    @db.Char(36)
+  title        String     @db.VarChar(200)
+  description  String?    @db.Text
+  level        GoalLevel
+  priority     Priority   @default(MEDIUM)
+  status       GoalStatus @default(NOT_STARTED)
+  startDate    DateTime?  @db.Date
+  deadline     DateTime?  @db.Date
+  targetValue  Decimal?   @db.Decimal(12, 2)
+  currentValue Decimal    @default(0) @db.Decimal(12, 2)
+  unit         String?    @db.VarChar(30)
+  /// Progress history: [{ at: ISO string, value: number, note?: string }]
+  progressLog  Json?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent     Goal?           @relation("GoalHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children   Goal[]          @relation("GoalHierarchy")
+  category   Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  milestones GoalMilestone[]
+  tasks      Task[]
+  projects   Project[]
+
+  @@index([userId, level, status])
+  @@index([userId, deadline])
+}
+
+model GoalMilestone {
+  id          String    @id @default(uuid()) @db.Char(36)
+  goalId      String    @db.Char(36)
+  title       String    @db.VarChar(200)
+  dueDate     DateTime? @db.Date
+  completedAt DateTime?
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, sortOrder])
+}
+
+model Project {
+  id          String        @id @default(uuid()) @db.Char(36)
+  userId      String        @db.Char(36)
+  categoryId  String?       @db.Char(36)
+  goalId      String?       @db.Char(36)
+  name        String        @db.VarChar(200)
+  description String?       @db.Text
+  status      ProjectStatus @default(PLANNED)
+  priority    Priority      @default(MEDIUM)
+  color       String?       @db.Char(7)
+  startDate   DateTime?     @db.Date
+  deadline    DateTime?     @db.Date
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  goal     Goal?           @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  tasks    Task[]
+  events   CalendarEvent[]
+
+  @@index([userId, status])
+}
+
+model Task {
+  id                     String         @id @default(uuid()) @db.Char(36)
+  userId                 String         @db.Char(36)
+  parentId               String?        @db.Char(36) // subtasks
+  projectId              String?        @db.Char(36)
+  goalId                 String?        @db.Char(36)
+  categoryId             String?        @db.Char(36)
+  title                  String         @db.VarChar(300)
+  notes                  String?        @db.Text
+  status                 TaskStatus     @default(TODO)
+  priority               Priority       @default(MEDIUM)
+  estimatedMinutes       Int?           @db.SmallInt
+  actualMinutes          Int?           @db.SmallInt
+  dueAt                  DateTime?
+  /// Wall-clock day the task is planned for (in user TZ) when not time-blocked.
+  plannedDate            DateTime?      @db.Date
+  schedulingMode         SchedulingMode @default(FLEXIBLE)
+  fixedStartAt           DateTime?
+  splittable             Boolean        @default(false)
+  minSessionMinutes      Int?           @db.SmallInt
+  preferredTimeOfDay     TimeOfDay      @default(ANY)
+  recurrenceRule         String?        @db.VarChar(500) // RFC 5545 RRULE
+  completedAt            DateTime?
+  sortOrder              Int            @default(0)
+  version                Int            @default(1)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    Task?          @relation("Subtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks  Task[]         @relation("Subtasks")
+  project   Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  goal      Goal?          @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  category  Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  schedules TaskSchedule[]
+  dependsOn TaskDependency[] @relation("DependentTask")
+  blocks    TaskDependency[] @relation("BlockingTask")
+
+  @@index([userId, status, dueAt])
+  @@index([userId, plannedDate])
+  @@index([projectId])
+  @@index([goalId])
+}
+
+/// Task B (taskId) cannot start before task A (dependsOnId) is completed.
+model TaskDependency {
+  taskId      String   @db.Char(36)
+  dependsOnId String   @db.Char(36)
+  createdAt   DateTime @default(now())
+
+  task      Task @relation("DependentTask", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOn Task @relation("BlockingTask", fields: [dependsOnId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, dependsOnId])
+  @@index([dependsOnId])
+}
+
+/// A concrete time block for (part of) a task. Splittable tasks have several.
+model TaskSchedule {
+  id         String             @id @default(uuid()) @db.Char(36)
+  userId     String             @db.Char(36)
+  taskId     String             @db.Char(36)
+  startAt    DateTime
+  endAt      DateTime
+  status     TaskScheduleStatus @default(PLANNED)
+  source     EventSource        @default(MANUAL)
+  locked     Boolean            @default(false)
+  proposalId String?            @db.Char(36)
+  version    Int                @default(1)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task     Task              @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  proposal PlanningProposal? @relation(fields: [proposalId], references: [id], onDelete: SetNull)
+
+  @@index([userId, startAt])
+  @@index([taskId])
+}
+
+// ─── Calendar & availability ─────────────────────────────────────────────
+
+model CalendarEvent {
+  id             String           @id @default(uuid()) @db.Char(36)
+  userId         String           @db.Char(36)
+  categoryId     String?          @db.Char(36)
+  projectId      String?          @db.Char(36)
+  tripId         String?          @db.Char(36)
+  title          String           @db.VarChar(300)
+  description    String?          @db.Text
+  location       String?          @db.VarChar(300)
+  startAt        DateTime
+  endAt          DateTime
+  allDay         Boolean          @default(false)
+  timezone       String           @default("Africa/Casablanca") @db.VarChar(64)
+  recurrenceRule String?          @db.VarChar(500) // RFC 5545 RRULE
+  priority       Priority         @default(MEDIUM)
+  flexibility    EventFlexibility @default(FIXED)
+  /// Locked events are never moved by the planner without explicit user consent.
+  locked         Boolean          @default(false)
+  color          String?          @db.Char(7)
+  source         EventSource      @default(MANUAL)
+  proposalId     String?          @db.Char(36)
+  integrationId  String?          @db.Char(36)
+  externalId     String?          @db.VarChar(255)
+  externalEtag   String?          @db.VarChar(255)
+  version        Int              @default(1)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  project     Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  trip        Trip?             @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  proposal    PlanningProposal? @relation(fields: [proposalId], references: [id], onDelete: SetNull)
+  integration Integration?      @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+
+  @@unique([integrationId, externalId])
+  @@index([userId, startAt, endAt])
+  @@index([userId, categoryId])
+}
+
+/// Recurring weekly availability windows or one-off blocks (dates set).
+model AvailabilityRule {
+  id        String           @id @default(uuid()) @db.Char(36)
+  userId    String           @db.Char(36)
+  kind      AvailabilityKind
+  label     String?          @db.VarChar(100)
+  weekday   Int?             @db.TinyInt // 0–6 for recurring rules
+  startTime String?          @db.Char(5) // HH:mm local
+  endTime   String?          @db.Char(5)
+  startsAt  DateTime? // one-off block start (UTC)
+  endsAt    DateTime?
+  timezone  String           @default("Africa/Casablanca") @db.VarChar(64)
+  active    Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind, active])
+}
+
+// ─── Habits ──────────────────────────────────────────────────────────────
+
+model Habit {
+  id            String         @id @default(uuid()) @db.Char(36)
+  userId        String         @db.Char(36)
+  categoryId    String?        @db.Char(36)
+  name          String         @db.VarChar(120)
+  description   String?        @db.Text
+  frequency     HabitFrequency @default(DAILY)
+  /// For WEEKLY/CUSTOM: weekday indexes (0–6) on which the habit is due.
+  daysOfWeek    Json?
+  timesPerWeek  Int?           @db.TinyInt
+  targetPerDay  Int            @default(1) @db.SmallInt
+  reminderTime  String?        @db.Char(5)
+  color         String?        @db.Char(7)
+  icon          String?        @db.VarChar(40)
+  archivedAt    DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  logs     HabitLog[]
+
+  @@index([userId, archivedAt])
+}
+
+model HabitLog {
+  id        String   @id @default(uuid()) @db.Char(36)
+  habitId   String   @db.Char(36)
+  userId    String   @db.Char(36)
+  date      DateTime @db.Date // local calendar date
+  count     Int      @default(1) @db.SmallInt
+  note      String?  @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@index([userId, date])
+}
+
+// ─── Study ───────────────────────────────────────────────────────────────
+
+model StudySubject {
+  id                   String    @id @default(uuid()) @db.Char(36)
+  userId               String    @db.Char(36)
+  name                 String    @db.VarChar(150)
+  description          String?   @db.Text
+  color                String?   @db.Char(7)
+  importance           Priority  @default(MEDIUM)
+  examDate             DateTime?
+  weeklyTargetMinutes  Int?      @db.SmallInt
+  revisionIntervalDays Int?      @db.SmallInt
+  /// Course/chapter outline: [{ id, title, chapters: [{ id, title, done }] }]
+  outline              Json?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions StudySession[]
+
+  @@index([userId])
+}
+
+model StudySession {
+  id          String           @id @default(uuid()) @db.Char(36)
+  userId      String           @db.Char(36)
+  subjectId   String           @db.Char(36)
+  kind        StudySessionKind @default(LEARNING)
+  topic       String?          @db.VarChar(200)
+  startAt     DateTime
+  endAt       DateTime
+  completedAt DateTime?
+  /// Spaced-repetition hooks (SM-2 style) for future scheduling.
+  easeFactor  Decimal?         @db.Decimal(4, 2)
+  intervalDays Int?            @db.SmallInt
+  nextReviewAt DateTime?
+  notes       String?          @db.Text
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject StudySubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startAt])
+  @@index([subjectId, nextReviewAt])
+}
+
+// ─── Travel ──────────────────────────────────────────────────────────────
+
+model Trip {
+  id             String     @id @default(uuid()) @db.Char(36)
+  userId         String     @db.Char(36)
+  title          String     @db.VarChar(200)
+  destination    String     @db.VarChar(200)
+  departureAt    DateTime
+  returnAt       DateTime
+  timezone       String     @default("Africa/Casablanca") @db.VarChar(64)
+  status         TripStatus @default(PLANNING)
+  transportation String?    @db.VarChar(300)
+  accommodation  String?    @db.VarChar(300)
+  budgetAmount   Decimal?   @db.Decimal(12, 2)
+  budgetCurrency String?    @db.Char(3)
+  companions     Json? // string[]
+  checklist      Json? // [{ label, done }]
+  documents      Json? // [{ label, reference }] — no secrets
+  notes          String?    @db.Text
+  /// When true, the trip window is blocked for the scheduling engine.
+  blocksCalendar Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activities TripActivity[]
+  events     CalendarEvent[]
+
+  @@index([userId, departureAt])
+}
+
+model TripActivity {
+  id          String    @id @default(uuid()) @db.Char(36)
+  tripId      String    @db.Char(36)
+  title       String    @db.VarChar(200)
+  description String?   @db.Text
+  location    String?   @db.VarChar(300)
+  startAt     DateTime?
+  endAt       DateTime?
+  reservation String?   @db.VarChar(200)
+  cost        Decimal?  @db.Decimal(12, 2)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId, startAt])
+}
+
+// ─── AI planning ─────────────────────────────────────────────────────────
+
+/// A planner proposal. Never touches the live calendar until APPLIED.
+/// `baseFingerprint` hashes the calendar/task state the proposal was computed
+/// against; approval recomputes it to detect stale proposals.
+model PlanningProposal {
+  id              String         @id @default(uuid()) @db.Char(36)
+  userId          String         @db.Char(36)
+  conversationId  String?        @db.Char(36)
+  supersedesId    String?        @db.Char(36)
+  status          ProposalStatus @default(PENDING)
+  revision        Int            @default(1)
+  version         Int            @default(1)
+  periodStart     DateTime
+  periodEnd       DateTime
+  request         Json // validated structured request (intent, activities, constraints)
+  summary         String?        @db.Text
+  explanation     Json?
+  unscheduled     Json?
+  score           Decimal?       @db.Decimal(6, 3)
+  baseFingerprint String         @db.Char(64)
+  expiresAt       DateTime
+  decidedAt       DateTime?
+  appliedAt       DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation  AIConversation?   @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  supersedes    PlanningProposal? @relation("ProposalRevisions", fields: [supersedesId], references: [id], onDelete: SetNull)
+  revisions     PlanningProposal[] @relation("ProposalRevisions")
+  changes       PlanningChange[]
+  events        CalendarEvent[]
+  taskSchedules TaskSchedule[]
+
+  @@index([userId, status, expiresAt])
+}
+
+model PlanningChange {
+  id             String                 @id @default(uuid()) @db.Char(36)
+  proposalId     String                 @db.Char(36)
+  type           PlanningChangeType
+  decision       PlanningChangeDecision @default(PROPOSED)
+  title          String                 @db.VarChar(300)
+  targetEventId  String?                @db.Char(36)
+  targetTaskId   String?                @db.Char(36)
+  /// Version of the target row when the proposal was generated (optimistic lock).
+  targetVersion  Int?
+  startAt        DateTime?
+  endAt          DateTime?
+  before         Json?
+  after          Json?
+  reason         String?                @db.Text
+  conflicts      Json?
+  sortOrder      Int                    @default(0)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  proposal PlanningProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId, sortOrder])
+}
+
+model AIConversation {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    String   @db.Char(36)
+  title     String?  @db.VarChar(200)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  AIMessage[]
+  proposals PlanningProposal[]
+
+  @@index([userId, updatedAt])
+}
+
+model AIMessage {
+  id               String        @id @default(uuid()) @db.Char(36)
+  conversationId   String        @db.Char(36)
+  role             AIMessageRole
+  content          String        @db.MediumText
+  structured       Json?
+  provider         String?       @db.VarChar(40)
+  model            String?       @db.VarChar(80)
+  promptTokens     Int?
+  completionTokens Int?
+  createdAt        DateTime      @default(now())
+
+  conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+// ─── Notifications & integrations ────────────────────────────────────────
+
+model Notification {
+  id           String              @id @default(uuid()) @db.Char(36)
+  userId       String              @db.Char(36)
+  type         NotificationType
+  channel      NotificationChannel @default(IN_APP)
+  title        String              @db.VarChar(200)
+  body         String?             @db.VarChar(1000)
+  entityType   String?             @db.VarChar(64)
+  entityId     String?             @db.Char(36)
+  scheduledFor DateTime?
+  sentAt       DateTime?
+  readAt       DateTime?
+  createdAt    DateTime            @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@index([scheduledFor, sentAt])
+}
+
+model Integration {
+  id                   String              @id @default(uuid()) @db.Char(36)
+  userId               String              @db.Char(36)
+  provider             IntegrationProvider
+  status               IntegrationStatus   @default(DISCONNECTED)
+  externalAccountId    String?             @db.VarChar(255)
+  /// AES-256-GCM encrypted OAuth credentials (never plaintext).
+  encryptedCredentials String?             @db.Text
+  scopes               String?             @db.VarChar(1000)
+  syncCursor           String?             @db.VarChar(1000)
+  lastSyncedAt         DateTime?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  syncLogs SyncLog[]
+  events   CalendarEvent[]
+
+  @@unique([userId, provider, externalAccountId])
+}
+
+model SyncLog {
+  id             String        @id @default(uuid()) @db.Char(36)
+  integrationId  String        @db.Char(36)
+  direction      SyncDirection
+  status         SyncStatus    @default(RUNNING)
+  itemsProcessed Int           @default(0)
+  itemsFailed    Int           @default(0)
+  errorMessage   String?       @db.VarChar(1000)
+  startedAt      DateTime      @default(now())
+  finishedAt     DateTime?
+
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([integrationId, startedAt])
+}

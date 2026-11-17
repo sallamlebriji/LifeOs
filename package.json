@@ -1,0 +1,29 @@
+{
+  "name": "lifeos",
+  "private": true,
+  "packageManager": "pnpm@10.34.9",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:up": "docker compose up -d mysql redis",
+    "db:down": "docker compose down",
+    "db:generate": "pnpm --filter @lifeos/database generate",
+    "db:migrate": "pnpm --filter @lifeos/database migrate:dev",
+    "db:deploy": "pnpm --filter @lifeos/database migrate:deploy",
+    "db:seed": "pnpm --filter @lifeos/database seed",
+    "db:studio": "pnpm --filter @lifeos/database studio"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.0",
+    "turbo": "^2.5.0",
+    "typescript": "~5.9.0"
+  }
+}
