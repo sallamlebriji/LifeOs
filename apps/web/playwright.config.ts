@@ -14,6 +14,7 @@ export default defineConfig({
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile', use: { ...devices['iPhone 13'] } },
+    // A Chromium phone profile keeps the suite to one browser engine.
+    { name: 'mobile', use: { ...devices['Pixel 7'] } },
   ],
 });

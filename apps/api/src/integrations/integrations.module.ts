@@ -1,36 +1,30 @@
-import { Controller, Delete, Get, HttpCode, Module, Post, Query, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Module, Post, Query, Req, Res } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { type IntegrationStatusDto } from '@lifeos/shared';
 import { type Request, type Response } from 'express';
 import { type AuthenticatedUser, CurrentUser } from '../common/decorators';
 import { AppConfig } from '../config/app-config.service';
+import { ApiZodBody } from '../common/swagger';
+import { ZodValidationPipe } from '../common/zod-validation.pipe';
+import { type DeviceImport, DeviceCalendarService, deviceImportSchema } from './device-calendar.service';
 import { GoogleCalendarService, OAUTH_COOKIE } from './google-calendar.service';
 
 const COOKIE_PATH = '/api/v1/integrations/google';
 
-const APPLE: IntegrationStatusDto = {
-  provider: 'APPLE_CALENDAR',
-  available: false,
-  unavailableReason: 'Apple Calendar has no web API. It will sync on-device through EventKit in the iOS app.',
-  connected: false,
-  account: null,
-  status: null,
-  lastSyncedAt: null,
-  lastSync: null,
-};
 
 @ApiTags('integrations')
 @Controller('integrations')
 export class IntegrationsController {
   constructor(
     private readonly google: GoogleCalendarService,
+    private readonly device: DeviceCalendarService,
     private readonly config: AppConfig,
   ) {}
 
   @Get()
   @ApiOperation({ summary: 'Calendar integrations and whether this server can offer them' })
   async list(@CurrentUser() user: AuthenticatedUser): Promise<IntegrationStatusDto[]> {
-    return [await this.google.status(user.userId), APPLE];
+    return [await this.google.status(user.userId), await this.device.status(user.userId)];
   }
 
   @Get('google/connect')
@@ -79,6 +73,19 @@ export class IntegrationsController {
     return this.google.sync(user.userId);
   }
 
+  @Post('apple/import')
+  @ApiOperation({ summary: 'Mirror a window of on-device calendar events (sent by the iOS/Android app)' })
+  @ApiZodBody(deviceImportSchema)
+  importDevice(@CurrentUser() user: AuthenticatedUser, @Body(new ZodValidationPipe(deviceImportSchema)) body: DeviceImport) {
+    return this.device.import(user.userId, body);
+  }
+
+  @Delete('apple')
+  @HttpCode(204)
+  async disconnectDevice(@CurrentUser() user: AuthenticatedUser) {
+    await this.device.disconnect(user.userId);
+  }
+
   @Delete('google')
   @HttpCode(204)
   @ApiOperation({ summary: 'Disconnect: revoke access, delete credentials and imported events' })
@@ -87,5 +94,5 @@ export class IntegrationsController {
   }
 }
 
-@Module({ controllers: [IntegrationsController], providers: [GoogleCalendarService], exports: [GoogleCalendarService] })
+@Module({ controllers: [IntegrationsController], providers: [GoogleCalendarService, DeviceCalendarService], exports: [GoogleCalendarService] })
 export class IntegrationsModule {}

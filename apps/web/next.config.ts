@@ -1,10 +1,14 @@
 import type { NextConfig } from 'next';
+import { join } from 'node:path';
 
 const apiOrigin = process.env.API_INTERNAL_URL ?? 'http://localhost:4010';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Self-contained server bundle for the production Docker image.
+  output: 'standalone',
+  outputFileTracingRoot: join(__dirname, '../..'),
   transpilePackages: ['@lifeos/ui'],
   // Proxy the API through the web origin: auth cookies stay first-party and
   // SameSite=Lax, and no CORS is needed in the browser.
@@ -20,6 +24,7 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
         ],
       },
     ];

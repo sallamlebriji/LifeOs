@@ -62,6 +62,17 @@ Original scope:
 
 Google Calendar (OAuth 2.0, import/export, sync logs), Apple Calendar (native, iOS), notifications (in-app, push, email), BullMQ background jobs, real email delivery, encrypted integration credentials.
 
-## Phase 6 — Mobile & production
+## Phase 6 — Mobile & production ✅ (with limits)
+
+Done:
+- `apps/mobile`: Expo SDK 58 + Expo Router app — sign-in with keychain-stored rotating tokens, Today (agenda, tasks, habits), Tasks (quick add, complete), Habits, Settings (push registration, Apple/device calendar import via EventKit, sign out). Offline-friendly: the last data is persisted on the device and shown while the network catches up. Typechecks, lints and bundles (`expo export`); **not run on a simulator or device here**.
+- Apple Calendar: on-device import posted to `POST /integrations/apple/import`, mirrored as fixed external events (e2e-tested).
+- Production: Dockerfiles for API and web (Next.js standalone), `docker-compose.prod.yml` with one-shot migrations and the job worker, `.env.production.example`, Prisma musl engine, HSTS. **Not built** here (Docker unavailable).
+- Security audit ([security-audit.md](security-audit.md)) with dependency fixes; deployment guide ([deployment.md](deployment.md)).
+- Playwright: two end-to-end journeys (sign-up → My Day → task → sign-out; task → planner → apply → calendar) on desktop and phone profiles — all passing against the real stack.
+
+Open items: Redis-backed rate limiting for multi-instance deployments, a nonce-based CSP, running the mobile app on devices, building the Docker images in CI.
+
+Original scope:
 
 Expo app (iOS/Android, Expo Router, push notifications, offline-friendly), production configuration, performance work, security audit, full Playwright coverage, deployment documentation.

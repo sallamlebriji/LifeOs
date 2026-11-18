@@ -1,0 +1,54 @@
+# Production-like stack: MySQL 8.4, Redis, one-shot migrations, API (with the
+# background worker) and web. Secrets come from .env.production (never commit it).
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+# Put a TLS-terminating reverse proxy (Caddy, nginx, a cloud load balancer) in
+# front of `web`; only `web` needs to be public.
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_0900_ai_ci', '--default-time-zone=+00:00']
+    environment:
+      MYSQL_DATABASE: lifeos
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes: [mysql-data:/var/lib/mysql]
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-uroot', '-p${MYSQL_ROOT_PASSWORD}']
+      interval: 10s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes', '--requirepass', '${REDIS_PASSWORD}']
+    volumes: [redis-data:/data]
+
+  migrate:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    command: ['pnpm', '--filter', '@lifeos/database', 'exec', 'prisma', 'migrate', 'deploy']
+    env_file: .env.production
+    depends_on: { mysql: { condition: service_healthy } }
+    restart: 'no'
+
+  api:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      NODE_ENV: production
+      JOBS_ENABLED: 'true'
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_started }
+
+  web:
+    build: { context: ., dockerfile: apps/web/Dockerfile, args: { API_INTERNAL_URL: 'http://api:4010' } }
+    restart: unless-stopped
+    ports: ['3000:3000']
+    depends_on: [api]
+
+volumes:
+  mysql-data:
+  redis-data:

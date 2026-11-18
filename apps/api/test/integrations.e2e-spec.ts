@@ -154,4 +154,28 @@ describe('Phase 5: notifications and Google Calendar (e2e, MySQL)', () => {
     expect(await ctx.prisma.integration.count({ where: { userId: a.id } })).toBe(0);
     expect((await ctx.prisma.calendarEvent.findFirstOrThrow({ where: { userId: a.id, title: 'Gym' } })).externalId).toBeNull();
   });
+
+  it('mirrors on-device (Apple) calendar snapshots for the planner', async () => {
+    const a = await signUp();
+    const from = new Date(Date.now() - 86_400_000).toISOString();
+    const to = new Date(Date.now() + 30 * 86_400_000).toISOString();
+    const base = Date.now();
+    const ev = (id: string, title: string, h: number) => ({
+      externalId: id,
+      title,
+      startAt: new Date(base + h * 3_600_000).toISOString(),
+      endAt: new Date(base + (h + 1) * 3_600_000).toISOString(),
+    });
+    const first = await ctx.http().post('/api/v1/integrations/apple/import').set(a.auth).send({ from, to, events: [ev('a', 'Doctor', 24), ev('b', 'Flight', 48)] }).expect(201);
+    expect(first.body).toEqual({ imported: 2, removed: 0 });
+    const again = await ctx.http().post('/api/v1/integrations/apple/import').set(a.auth).send({ from, to, events: [ev('a', 'Doctor', 24)] }).expect(201);
+    expect(again.body).toEqual({ imported: 0, removed: 1 });
+    const row = await ctx.prisma.calendarEvent.findFirstOrThrow({ where: { userId: a.id, title: 'Doctor' } });
+    expect(row).toMatchObject({ source: 'EXTERNAL', flexibility: 'FIXED' });
+    const list = await ctx.http().get('/api/v1/integrations').set(a.auth).expect(200);
+    expect(list.body.find((i: { provider: string }) => i.provider === 'APPLE_CALENDAR')).toMatchObject({ connected: true });
+    await ctx.http().post('/api/v1/integrations/apple/import').set(a.auth).send({ from: to, to: from, events: [] }).expect(400);
+    await ctx.http().delete('/api/v1/integrations/apple').set(a.auth).expect(204);
+    expect(await ctx.prisma.calendarEvent.count({ where: { userId: a.id, source: 'EXTERNAL' } })).toBe(0);
+  });
 });

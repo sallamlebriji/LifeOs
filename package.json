@@ -25,5 +25,11 @@
     "prettier": "^3.6.0",
     "turbo": "^2.5.0",
     "typescript": "~5.9.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss@<8.5.23": "^8.5.23",
+      "deepmerge-ts@<8": "^8.0.0"
+    }
   }
 }

@@ -19,7 +19,9 @@ export default function RegisterPage() {
   const register = useRegister();
   const form = useForm<FormValues, unknown, RegisterInput>({
     resolver: zodResolver(registerSchema),
-    mode: 'onTouched',
+    // Validate on submit, then live: blur errors shift the layout under a pointer that is mid-click.
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
   });
 
   const onSubmit = form.handleSubmit(async (values) => {

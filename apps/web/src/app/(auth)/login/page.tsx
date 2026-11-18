@@ -22,7 +22,7 @@ function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const login = useLogin();
-  const form = useForm<LoginInput>({ resolver: zodResolver(loginSchema), mode: 'onTouched' });
+  const form = useForm<LoginInput>({ resolver: zodResolver(loginSchema), mode: 'onSubmit', reValidateMode: 'onChange' });
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {

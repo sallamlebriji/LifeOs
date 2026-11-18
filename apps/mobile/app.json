@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "LifeOS",
+    "slug": "lifeos",
+    "scheme": "lifeos",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "app.lifeos.mobile",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCalendarsUsageDescription": "LifeOS reads your calendar so the planner can work around your existing events.",
+        "NSCalendarsFullAccessUsageDescription": "LifeOS reads your calendar so the planner can work around your existing events."
+      }
+    },
+    "android": {
+      "package": "app.lifeos.mobile",
+      "permissions": ["READ_CALENDAR"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-status-bar",
+      "expo-notifications",
+      [
+        "expo-calendar",
+        { "calendarPermission": "LifeOS reads your calendar so the planner can work around your existing events." }
+      ]
+    ],
+    "experiments": { "typedRoutes": true },
+    "extra": {
+      "apiUrl": "http://localhost:4010/api/v1"
+    }
+  }
+}

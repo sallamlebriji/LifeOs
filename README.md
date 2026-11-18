@@ -2,7 +2,7 @@
 
 A personal operating system: goals, tasks, calendar, habits and an AI planner that **proposes** realistic schedules a deterministic engine validates and **you approve**.
 
-> **Status: Phases 1–5 complete** (foundation; tasks, goals, projects, calendar, availability, habits; AI planner; sports, study, travel, analytics; notifications, jobs, email, Google Calendar). See the roadmap for what each phase does not cover. See [docs/roadmap.md](docs/roadmap.md) for what ships next.
+> **Status: all six phases built.** Web app, API and mobile app cover tasks, goals, projects, calendar, habits, the AI planner, sports, study, travel, analytics, notifications and calendar integrations. See [docs/roadmap.md](docs/roadmap.md) for what each phase does not cover or did not verify. See [docs/roadmap.md](docs/roadmap.md) for what ships next.
 
 ## Stack
 
@@ -21,6 +21,7 @@ A personal operating system: goals, tasks, calendar, habits and an AI planner th
 apps/
   api/                 NestJS REST API
   web/                 Next.js web app
+  mobile/              Expo (React Native) app
 packages/
   database/            Prisma schema, migrations, seed, client
   shared/              Types, constants, timezone, recurrence & interval helpers
@@ -34,8 +35,6 @@ infrastructure/
 docs/                  Architecture, database, API, security, roadmap…
 docker-compose.yml     MySQL 8.4 + Redis 7 for local development
 ```
-
-`apps/mobile` is created in Phase 6 so nothing ships as an empty placeholder.
 
 **AI (optional):** set `AI_PROVIDER=openai`, `AI_MODEL` and `OPENAI_API_KEY` in `.env` to enable plain-language planning. Without them the planner works from its form, and the chat says it isn't configured.
 
@@ -93,7 +92,8 @@ The web app proxies `/api/v1/*` to the API, so auth cookies stay first-party.
 | `pnpm lint` | ESLint everywhere |
 | `pnpm test` | Unit tests (no database needed) |
 | `pnpm --filter @lifeos/api test:e2e` | API integration tests against the MySQL test database |
-| `pnpm --filter @lifeos/web test:e2e` | Playwright browser tests (needs the stack running) |
+| `pnpm --filter @lifeos/web test:e2e` | Playwright browser tests (needs the stack running; first run `npx playwright install chromium`) |
+| `pnpm --filter @lifeos/mobile start` | Expo dev server for the mobile app (set `EXPO_PUBLIC_API_URL` to an address your phone can reach) |
 | `pnpm db:migrate` | Create a new migration after editing `schema.prisma` |
 | `pnpm db:studio` | Prisma Studio |
 
@@ -114,3 +114,5 @@ The web app proxies `/api/v1/*` to the API, so auth cookies stay first-party.
 - [AI planner](docs/ai-planner.md) (design, Phase 3)
 - [Scheduling engine](docs/scheduling-engine.md) (design, Phase 3)
 - [Roadmap](docs/roadmap.md)
+- [Deployment](docs/deployment.md)
+- [Security audit](docs/security-audit.md)
