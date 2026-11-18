@@ -13,7 +13,10 @@ import { MyDayModule } from './dashboard/my-day.module';
 import { GoalsModule } from './goals/goals.module';
 import { HabitsModule } from './habits/habits.module';
 import { HealthModule } from './health/health.controller';
+import { IntegrationsModule } from './integrations/integrations.module';
+import { JobsModule } from './jobs/jobs.module';
 import { MailModule } from './mail/mail.service';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PreferencesModule } from './preferences/preferences.controller';
 import { PlannerModule } from './planner/planner.module';
 import { PrismaModule } from './prisma/prisma.service';
@@ -55,6 +58,9 @@ import { UsersModule } from './users/users.controller';
     StudyModule,
     TravelModule,
     AnalyticsModule,
+    NotificationsModule,
+    IntegrationsModule,
+    JobsModule,
   ],
   providers: [
     // Order matters: rate-limit → CSRF → authenticate → authorise.

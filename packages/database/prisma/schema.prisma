@@ -246,6 +246,7 @@ model User {
   notifications     Notification[]
   integrations      Integration[]
   workouts          Workout[]
+  devices           DeviceToken[]
 }
 
 model UserPreferences {
@@ -267,6 +268,8 @@ model UserPreferences {
   schedulingWeights     Json? // overrides for scheduling-engine weights
   notificationsEnabled  Boolean   @default(true)
   weeklyWorkoutTarget   Int       @default(3) @db.TinyInt
+  emailReminders        Boolean   @default(false)
+  eventReminderMinutes  Int       @default(15) @db.SmallInt
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
@@ -871,12 +874,30 @@ model Notification {
   scheduledFor DateTime?
   sentAt       DateTime?
   readAt       DateTime?
+  /// Prevents the same reminder being generated twice (e.g. "event:<id>:<start>").
+  dedupeKey    String?             @unique @db.VarChar(191)
+  /// Last delivery error for EMAIL/PUSH (never contains secrets).
+  error        String?             @db.VarChar(300)
   createdAt    DateTime            @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt, createdAt])
   @@index([scheduledFor, sentAt])
+}
+
+/// Expo push token registered by a signed-in mobile device.
+model DeviceToken {
+  id         String   @id @default(uuid()) @db.Char(36)
+  userId     String   @db.Char(36)
+  token      String   @unique @db.VarChar(255)
+  platform   String   @db.VarChar(10) // ios | android
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Integration {

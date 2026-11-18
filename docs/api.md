@@ -138,6 +138,22 @@ The Kanban board is `GET /tasks?projectId=…&sort=manual` + `PATCH /tasks/:id/s
 
 `POST /planner/proposals` also accepts `includeStudy: true`.
 
+## Notifications & integrations (Phase 5)
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/notifications` | In-app items (due reminders are generated first) + `unread` |
+| POST | `/notifications/:id/read`, `/notifications/read-all` | |
+| POST | `/devices` | `{ token: ExponentPushToken[…], platform }` |
+| DELETE | `/devices/:token` | |
+| GET | `/integrations` | Google and Apple status, including why one is unavailable |
+| GET | `/integrations/google/connect` | `{ url }` + signed PKCE cookie; 503 `INTEGRATION_NOT_CONFIGURED` without OAuth client or encryption key |
+| GET | `/integrations/google/callback` | OAuth redirect target; redirects to `/settings?google=connected|failed|cancelled` |
+| POST | `/integrations/google/sync` | Import + export now |
+| DELETE | `/integrations/google` | Revoke, delete credentials and imported events |
+
+Preferences gained `emailReminders` and `eventReminderMinutes`.
+
 ## Health
 
 `GET /health` → `{ status: ok | degraded | down, checks: { mysql, redis } }`. 503 when MySQL is unreachable; Redis down is `degraded`.

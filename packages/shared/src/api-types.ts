@@ -32,6 +32,8 @@ export interface UserPreferencesDto {
   preferredFocusTime: TimeOfDayValue;
   schedulingWeights: Record<string, number> | null;
   notificationsEnabled: boolean;
+  emailReminders: boolean;
+  eventReminderMinutes: number;
 }
 
 export interface AuthResponse {

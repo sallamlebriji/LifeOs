@@ -45,7 +45,20 @@ Original scope:
 
 Sports & fitness (adds `Workout`/`ExerciseLog`), Study (courses/chapters, revision planning, spaced repetition), Travel (itinerary, checklist, calendar blocking), Analytics with weekly and monthly reports.
 
-## Phase 5 — Integrations
+## Phase 5 — Integrations ✅ (with limits)
+
+Done:
+- Notifications: event, deadline and habit reminders generated from your data (deduplicated), in-app bell with unread count, opt-in email, Expo push to registered devices (dead tokens pruned), reminder lead time in Settings. In-app reminders work without the worker.
+- Background jobs on BullMQ (`JOBS_ENABLED=true` + Redis): reminders every minute, calendar sync every 15 minutes.
+- Real email delivery over SMTP (`MAIL_TRANSPORT=smtp`, `SMTP_URL`); production refuses the log transport.
+- Integration credentials encrypted with AES-256-GCM (`INTEGRATION_ENCRYPTION_KEY`, user-bound associated data).
+- Google Calendar: OAuth 2.0 with PKCE and a signed state cookie, incremental import with sync tokens (cancelled events removed), export of LifeOS events tagged with their id (no duplicates), sync logs, disconnect with token revocation.
+
+Not done / not verified here:
+- Apple Calendar: no web API exists; it needs EventKit in the iOS app (Phase 6).
+- Google and Expo are tested against HTTP test doubles only — no real OAuth client or device was available. BullMQ scheduling is not exercised by tests because Redis isn't running on this machine.
+
+Original scope:
 
 Google Calendar (OAuth 2.0, import/export, sync logs), Apple Calendar (native, iOS), notifications (in-app, push, email), BullMQ background jobs, real email delivery, encrypted integration credentials.
 

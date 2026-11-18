@@ -1,4 +1,5 @@
 import { Global, Injectable, Logger, Module } from '@nestjs/common';
+import { createTransport, type Transporter } from 'nodemailer';
 import { AppConfig } from '../config/app-config.service';
 
 export interface MailMessage {
@@ -8,15 +9,19 @@ export interface MailMessage {
 }
 
 /**
- * Outbound email. Phase 1 ships the "log" transport only: messages (including
- * verification/reset links) are written to the API log for local development.
- * A real SMTP/provider transport is a Phase 5 task — see docs/roadmap.md.
+ * Outbound email. "log" writes messages (including verification/reset links)
+ * to the API log for local development; "smtp" delivers them via SMTP_URL.
+ * Production refuses to boot with the log transport (see env.ts).
  */
 @Injectable()
 export class MailService {
   private readonly logger = new Logger('Mail');
 
-  constructor(private readonly config: AppConfig) {}
+  private readonly transport: Transporter | null;
+
+  constructor(private readonly config: AppConfig) {
+    this.transport = config.get('MAIL_TRANSPORT') === 'smtp' ? createTransport(config.get('SMTP_URL')) : null;
+  }
 
   async send(message: MailMessage): Promise<void> {
     if (this.config.get('MAIL_TRANSPORT') === 'log') {
@@ -27,6 +32,7 @@ export class MailService {
       if (this.sent.length > 50) this.sent.shift();
       return;
     }
+    await this.transport!.sendMail({ from: this.config.get('MAIL_FROM'), to: message.to, subject: message.subject, text: message.text });
   }
 
   /** Last messages sent with the log transport (used by integration tests). */

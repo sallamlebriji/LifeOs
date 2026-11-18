@@ -1,5 +1,6 @@
 'use client';
 
+import { NotificationBell } from './notification-bell';
 import { Button, Spinner } from '@lifeos/ui';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Menu from '@radix-ui/react-dropdown-menu';
@@ -178,7 +179,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span className="font-display font-semibold">LifeOS</span>
               </Link>
             </div>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-1">
+              <NotificationBell />
               <AccountMenu name={user.displayName} email={user.email} />
             </div>
           </header>

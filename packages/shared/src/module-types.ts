@@ -400,3 +400,33 @@ export interface AnalyticsDto {
   /** Per local day: completed tasks and focus minutes. */
   daily: Array<{ date: string; tasksCompleted: number; focusMinutes: number }>;
 }
+
+// ─── Notifications & integrations (Phase 5) ──────────────────────────────
+
+export interface NotificationDto {
+  id: string;
+  type: 'TASK_REMINDER' | 'EVENT_REMINDER' | 'HABIT_REMINDER' | 'DEADLINE_ALERT' | 'AI_SUGGESTION' | 'SYSTEM';
+  title: string;
+  body: string | null;
+  entityType: string | null;
+  entityId: string | null;
+  at: string;
+  read: boolean;
+}
+
+export interface NotificationListDto {
+  items: NotificationDto[];
+  unread: number;
+}
+
+export interface IntegrationStatusDto {
+  provider: 'GOOGLE_CALENDAR' | 'APPLE_CALENDAR';
+  /** Server has the credentials/keys needed to offer this integration. */
+  available: boolean;
+  unavailableReason: string | null;
+  connected: boolean;
+  account: string | null;
+  status: 'CONNECTED' | 'DISCONNECTED' | 'ERROR' | null;
+  lastSyncedAt: string | null;
+  lastSync: { status: string; itemsProcessed: number; itemsFailed: number; errorMessage: string | null; finishedAt: string | null } | null;
+}

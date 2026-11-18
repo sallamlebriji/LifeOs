@@ -2,7 +2,7 @@
 
 A personal operating system: goals, tasks, calendar, habits and an AI planner that **proposes** realistic schedules a deterministic engine validates and **you approve**.
 
-> **Status: Phases 1–4 complete** (foundation; tasks, goals, projects, calendar, availability, habits; AI planner; sports, study, travel, analytics). See [docs/roadmap.md](docs/roadmap.md) for what ships next.
+> **Status: Phases 1–5 complete** (foundation; tasks, goals, projects, calendar, availability, habits; AI planner; sports, study, travel, analytics; notifications, jobs, email, Google Calendar). See the roadmap for what each phase does not cover. See [docs/roadmap.md](docs/roadmap.md) for what ships next.
 
 ## Stack
 
@@ -101,6 +101,7 @@ The web app proxies `/api/v1/*` to the API, so auth cookies stay first-party.
 
 - **Windows: `EPERM … query_engine-windows.dll.node`** during `pnpm build`/`prisma generate` — the running API holds the Prisma engine file. Stop `pnpm dev` and run it again.
 - **Times off by an hour for Morocco** — Morocco moved to UTC+0 on 2026-09-20. Runtimes bundling older tzdata (Node 24.15 ships 2026a) still apply UTC+1. The API logs its tzdata version at startup; update Node when a newer tzdata is available.
+- **`prisma migrate dev` refuses to run (non-interactive) or diffs every table** — on Windows, generate the SQL from the live dev database instead: `prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script`, save it as a new migration folder, fix table-name casing, then `pnpm db:deploy`.
 - **Lower-case table names in generated migrations** — on Windows, MySQL's `lower_case_table_names=1` can make `prisma migrate dev` emit `ALTER TABLE planningproposal`. Check the generated SQL and keep PascalCase table names, or Linux servers will fail.
 - **Docker Desktop fails with a `dockerInference` error** — quit Docker Desktop, delete `%LOCALAPPDATA%\Docker\run\dockerInference` (may need an admin shell or a reboot), then start it again.
 

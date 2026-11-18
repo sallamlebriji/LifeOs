@@ -31,5 +31,7 @@ export function toPreferencesDto(p: UserPreferences): UserPreferencesDto {
     preferredFocusTime: p.preferredFocusTime,
     schedulingWeights: (p.schedulingWeights as Record<string, number> | null) ?? null,
     notificationsEnabled: p.notificationsEnabled,
+    emailReminders: p.emailReminders,
+    eventReminderMinutes: p.eventReminderMinutes,
   };
 }

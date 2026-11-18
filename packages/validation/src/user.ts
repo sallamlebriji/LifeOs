@@ -62,6 +62,8 @@ export const updatePreferencesSchema = z
     preferredFocusTime: timeOfDaySchema,
     schedulingWeights: schedulingWeightsSchema.nullable(),
     notificationsEnabled: z.boolean(),
+    emailReminders: z.boolean(),
+    eventReminderMinutes: z.number().int().min(0).max(1440),
   })
   .partial()
   .superRefine((v, ctx) => {
