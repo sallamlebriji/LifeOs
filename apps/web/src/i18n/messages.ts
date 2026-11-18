@@ -2,7 +2,10 @@
  * UI strings. English is the source of truth (its keys type the others), so a
  * missing French key is a compile error. Arabic (RTL) can be added the same way.
  */
+import { modulesEn, modulesFr } from './modules';
+
 const en = {
+  ...modulesEn,
   'nav.today': 'My Day',
   'nav.calendar': 'Calendar',
   'nav.goals': 'Goals',
@@ -39,14 +42,14 @@ const en = {
   'today.nowHappening': 'Now',
   'today.agenda': 'Agenda',
   'today.agendaEmpty': 'No events today',
-  'today.agendaEmptyDetail': 'Your calendar is clear. The full calendar arrives in Phase 2.',
+  'today.agendaEmptyDetail': 'Your calendar is clear.',
   'today.tasks': 'Tasks',
   'today.tasksProgress': '{done} of {total} done',
   'today.tasksEmpty': 'No tasks for today',
   'today.tasksEmptyDetail': 'Capture what you want to get done — one line is enough.',
   'today.habits': 'Habits',
   'today.habitsEmpty': 'No habits yet',
-  'today.habitsEmptyDetail': 'Habit tracking arrives with the Habits module in Phase 2.',
+  'today.habitsEmptyDetail': 'Add one on the Habits page.',
   'today.goals': 'Goals in focus',
   'today.goalsEmpty': 'No active goals',
   'today.insights': 'Insights',
@@ -103,6 +106,7 @@ export type MessageKey = keyof typeof en;
 export type Messages = Record<MessageKey, string>;
 
 const fr: Messages = {
+  ...modulesFr,
   'nav.today': 'Ma journée',
   'nav.calendar': 'Calendrier',
   'nav.goals': 'Objectifs',
@@ -139,14 +143,14 @@ const fr: Messages = {
   'today.nowHappening': 'En cours',
   'today.agenda': 'Agenda',
   'today.agendaEmpty': 'Aucun événement aujourd’hui',
-  'today.agendaEmptyDetail': 'Votre agenda est libre. Le calendrier complet arrive en phase 2.',
+  'today.agendaEmptyDetail': 'Votre agenda est libre.',
   'today.tasks': 'Tâches',
   'today.tasksProgress': '{done} sur {total} terminées',
   'today.tasksEmpty': 'Aucune tâche aujourd’hui',
   'today.tasksEmptyDetail': 'Notez ce que vous voulez accomplir — une ligne suffit.',
   'today.habits': 'Habitudes',
   'today.habitsEmpty': 'Aucune habitude',
-  'today.habitsEmptyDetail': 'Le suivi des habitudes arrive avec le module Habitudes en phase 2.',
+  'today.habitsEmptyDetail': 'Ajoutez-en une depuis la page Habitudes.',
   'today.goals': 'Objectifs en cours',
   'today.goalsEmpty': 'Aucun objectif actif',
   'today.insights': 'Conseils',

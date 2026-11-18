@@ -3,6 +3,8 @@
  * No I/O here: everything is deterministic given (input, now) so it's unit-tested.
  */
 import {
+  type HabitSchedule,
+  habitStats,
   freeIntervals,
   type FreeSlot,
   type Insight,
@@ -66,6 +68,9 @@ export interface HabitRow {
   icon: string | null;
   /** Local date keys (YYYY-MM-DD) with a completion, most recent first. */
   completedDates: string[];
+  /** When present, streaks skip days the habit isn't due (weekly/custom habits). */
+  schedule?: HabitSchedule;
+  weekStartsOn?: number;
 }
 
 export interface GoalRow {
@@ -231,7 +236,9 @@ export function buildMyDay(input: MyDayInput): MyDayResponse {
     color: h.color,
     icon: h.icon,
     doneToday: h.completedDates.includes(input.date),
-    streak: computeStreak(h.completedDates, input.date),
+    streak: h.schedule
+      ? habitStats({ schedule: h.schedule, completedDates: h.completedDates, today: input.date, weekStartsOn: h.weekStartsOn ?? 1 }).currentStreak
+      : computeStreak(h.completedDates, input.date),
   }));
 
   const goals: MyDayGoal[] = input.goals.map((g) => ({

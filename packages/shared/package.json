@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@date-fns/tz": "^1.4.0",
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
+    "rrule": "^2.8.1"
   },
   "devDependencies": {
     "@lifeos/config": "workspace:*",

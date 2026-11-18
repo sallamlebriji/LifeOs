@@ -24,7 +24,7 @@ type Json = Record<string, unknown> | unknown[];
 export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   body?: Json;
-  query?: Record<string, string | undefined>;
+  query?: Record<string, string | number | boolean | undefined>;
   signal?: AbortSignal;
   /** Skip the automatic refresh-and-retry on 401 (used by auth calls themselves). */
   noRefresh?: boolean;
@@ -62,7 +62,7 @@ export function setUnauthenticatedHandler(handler: () => void) {
 
 export async function api<T>(path: string, opts: RequestOptions = {}, fetchImpl: typeof fetch = fetch): Promise<T> {
   const url = new URL(`${BASE}${path}`, 'http://placeholder');
-  for (const [k, v] of Object.entries(opts.query ?? {})) if (v !== undefined) url.searchParams.set(k, v);
+  for (const [k, v] of Object.entries(opts.query ?? {})) if (v !== undefined) url.searchParams.set(k, String(v));
   const target = `${url.pathname}${url.search}`;
 
   const doFetch = () =>

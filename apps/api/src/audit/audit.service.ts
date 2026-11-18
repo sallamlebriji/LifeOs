@@ -13,7 +13,12 @@ export type AuditAction =
   | 'auth.password_reset'
   | 'auth.password_changed'
   | 'user.data_exported'
-  | 'user.deleted';
+  | 'user.deleted'
+  | 'task.deleted'
+  | 'goal.deleted'
+  | 'project.deleted'
+  | 'event.deleted'
+  | 'habit.deleted';
 
 /**
  * Append-only audit trail for security-relevant events. Never pass secrets,

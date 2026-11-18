@@ -5,6 +5,7 @@ import { Button, Field, Input, SectionHeader, Surface } from '@lifeos/ui';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useMutation } from '@tanstack/react-query';
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
+import { AvailabilitySettings } from '@/components/settings/availability';
 import { useI18n } from '@/i18n/i18n';
 import { api, ApiError } from '@/lib/api';
 import { useMe, useUpdatePreferences, useUpdateProfile } from '@/lib/queries';
@@ -257,6 +258,12 @@ export default function SettingsPage() {
           </Surface>
         </section>
       ) : null}
+      <section>
+        <SectionHeader title={t('availability.title')} />
+        <Surface>
+          <AvailabilitySettings />
+        </Surface>
+      </section>
       <section>
         <SectionHeader title="Data & privacy" />
         <Surface>

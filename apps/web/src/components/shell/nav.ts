@@ -39,7 +39,6 @@ export const NAV: NavGroup[] = [
         href: '/calendar',
         label: 'nav.calendar',
         icon: CalendarDays,
-        phase: 2,
         summary: 'Day, week, month and agenda views with time blocking, recurring events, locked events and conflict detection.',
       },
     ],
@@ -47,10 +46,10 @@ export const NAV: NavGroup[] = [
   {
     label: 'nav.groupLife',
     items: [
-      { slug: 'goals', href: '/goals', label: 'nav.goals', icon: Target, phase: 2, summary: 'Annual, monthly, weekly and daily goals with milestones and progress history.' },
-      { slug: 'tasks', href: '/tasks', label: 'nav.tasks', icon: CheckSquare, phase: 2, summary: 'Full task management: subtasks, dependencies, recurrence, splittable and fixed-time tasks.' },
-      { slug: 'projects', href: '/projects', label: 'nav.projects', icon: FolderKanban, phase: 2, summary: 'Projects with milestones, a Kanban board, project calendar and time tracking.' },
-      { slug: 'habits', href: '/habits', label: 'nav.habits', icon: Repeat, phase: 2, summary: 'Create habits with custom frequencies, reminders, streaks and weekly consistency.' },
+      { slug: 'goals', href: '/goals', label: 'nav.goals', icon: Target, summary: 'Annual, monthly, weekly and daily goals with milestones and progress history.' },
+      { slug: 'tasks', href: '/tasks', label: 'nav.tasks', icon: CheckSquare, summary: 'Full task management: subtasks, dependencies, recurrence, splittable and fixed-time tasks.' },
+      { slug: 'projects', href: '/projects', label: 'nav.projects', icon: FolderKanban, summary: 'Projects with milestones, a Kanban board, project calendar and time tracking.' },
+      { slug: 'habits', href: '/habits', label: 'nav.habits', icon: Repeat, summary: 'Create habits with custom frequencies, reminders, streaks and weekly consistency.' },
       { slug: 'sports', href: '/sports', label: 'nav.sports', icon: Dumbbell, phase: 4, summary: 'Workouts, training frequency, recovery days and weekly statistics.' },
       { slug: 'study', href: '/study', label: 'nav.study', icon: BookOpen, phase: 4, summary: 'Subjects, courses, revision sessions and exams, ready for spaced repetition.' },
       { slug: 'travel', href: '/travel', label: 'nav.travel', icon: Plane, phase: 4, summary: 'Trips with itinerary, reservations, budget, checklist and calendar blocking.' },

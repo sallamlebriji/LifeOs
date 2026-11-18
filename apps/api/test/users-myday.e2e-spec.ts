@@ -55,7 +55,7 @@ describe('Users, preferences, My Day & data isolation (e2e, MySQL)', () => {
       .http()
       .post('/api/v1/tasks')
       .set(a.auth)
-      .send({ title: 'Prepare slides', priority: 'HIGH', estimatedMinutes: 45 })
+      .send({ title: 'Prepare slides', priority: 'HIGH', estimatedMinutes: 45, plannedDate: localDateKey(new Date(), 'Africa/Casablanca') })
       .expect(201);
     let day = await ctx.http().get('/api/v1/my-day').set(a.auth).expect(200);
     expect(day.body.topPriority.title).toBe('Prepare slides');

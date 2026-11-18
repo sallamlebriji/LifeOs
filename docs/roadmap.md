@@ -16,9 +16,19 @@ Done:
 
 Not done in Phase 1 (by design): real email transport (log transport only), Redis-backed rate limiting, background jobs.
 
-## Phase 2 — Core life management
+## Phase 2 — Core life management ✅
 
-Tasks (full CRUD, subtasks, dependencies, recurrence, splittable/fixed), Goals (levels, milestones, progress history), Projects (Kanban, milestones, time tracking), Calendar (day/week/month/agenda, drag-and-drop, recurring, locked/flexible events, conflict detection), Availability rules, Habits (CRUD, custom frequency, reminders, consistency). Pagination on list endpoints.
+Done:
+- Tasks: full CRUD, one level of subtasks, dependencies (cycle-checked; blocked tasks can't be completed), RRULE recurrence (completing rolls the next occurrence forward), fixed vs flexible / splittable scheduling fields, time tracking, manual order, filters + cursor pagination
+- Goals: annual → daily hierarchy (validated), milestones, progress history, target-based or milestone-based progress
+- Projects: CRUD, milestones (new `ProjectMilestone` table), Kanban board (drag between columns, keyboard-accessible), tracked vs estimated time
+- Calendar: day / week / month / agenda; drag to move or resize (15-min snap, across days); recurring events expanded per-timezone (DST-safe); locked events can't move until unlocked; fixed/flexible flag; conflict detection (warnings, never blocks)
+- Availability rules (weekly windows and one-off blocks) in Settings
+- Habits: CRUD, archive, daily / specific days / N per week, reminder time (stored), streaks (days or weeks), 28-day consistency, 7-day check-off grid
+- My Day now includes recurring event occurrences and frequency-aware habit streaks
+- Categories CRUD
+
+Not in Phase 2: editing a single occurrence of a recurring event (edits apply to the series), reminder delivery (Phase 5).
 
 ## Phase 3 — AI personal planner
 

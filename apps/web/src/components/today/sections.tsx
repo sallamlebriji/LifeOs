@@ -38,12 +38,6 @@ const PRIORITY_TONE: Record<PriorityValue, 'critical' | 'warning' | 'accent' | '
   MEDIUM: 'neutral',
   LOW: 'neutral',
 };
-const PRIORITY_LABEL: Record<PriorityValue, string> = {
-  URGENT: 'Urgent',
-  HIGH: 'High',
-  MEDIUM: 'Medium',
-  LOW: 'Low',
-};
 
 function CategoryDot({ color, name }: { color: string; name: string }) {
   return (
@@ -73,7 +67,7 @@ export function FocusTiles({ day, now }: { day: MyDayResponse; now: Date }) {
             <p className="mt-2 text-[1.1875rem] font-semibold leading-snug tracking-[-0.015em]">{top.title}</p>
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
               <Badge tone={top.overdue ? 'critical' : PRIORITY_TONE[top.priority]}>
-                {top.overdue ? t('today.overdue') : PRIORITY_LABEL[top.priority]}
+                {top.overdue ? t('today.overdue') : t(`priority.${top.priority}`)}
               </Badge>
               {top.estimatedMinutes ? (
                 <span className="text-[0.8125rem] text-secondary tabular">{formatDuration(top.estimatedMinutes, locale)}</span>
@@ -197,7 +191,7 @@ function TaskRow({ task, date, timezone }: { task: MyDayTask; date?: string; tim
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
             {task.overdue ? <Badge tone="critical">{t('today.overdue')}</Badge> : null}
             {task.priority === 'URGENT' || task.priority === 'HIGH' ? (
-              <Badge tone={PRIORITY_TONE[task.priority]}>{PRIORITY_LABEL[task.priority]}</Badge>
+              <Badge tone={PRIORITY_TONE[task.priority]}>{t(`priority.${task.priority}`)}</Badge>
             ) : null}
             {task.category ? <CategoryDot color={task.category.color} name={task.category.name} /> : null}
             {task.project ? <span className="text-[0.8125rem] text-secondary">{task.project.name}</span> : null}

@@ -5,6 +5,7 @@ import { myDayQuerySchema, type MyDayQuery } from '@lifeos/validation';
 import { type AuthenticatedUser, CurrentUser } from '../common/decorators';
 import { ApiZodQuery } from '../common/swagger';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
+import { CalendarModule } from '../calendar/calendar.module';
 import { MyDayService } from './my-day.service';
 
 @ApiTags('my-day')
@@ -25,5 +26,5 @@ export class MyDayController {
   }
 }
 
-@Module({ controllers: [MyDayController], providers: [MyDayService] })
+@Module({ imports: [CalendarModule], controllers: [MyDayController], providers: [MyDayService] })
 export class MyDayModule {}

@@ -3,15 +3,19 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuditModule } from './audit/audit.service';
 import { AuthModule } from './auth/auth.module';
+import { CalendarModule } from './calendar/calendar.module';
+import { CategoriesModule } from './categories/categories.module';
 import { CsrfGuard, JwtAuthGuard, RolesGuard } from './auth/guards';
 import { PrismaExceptionFilter } from './common/prisma-exception.filter';
 import { AppConfigModule } from './config/app-config.module';
 import { MyDayModule } from './dashboard/my-day.module';
+import { GoalsModule } from './goals/goals.module';
 import { HabitsModule } from './habits/habits.module';
 import { HealthModule } from './health/health.controller';
 import { MailModule } from './mail/mail.service';
 import { PreferencesModule } from './preferences/preferences.controller';
 import { PrismaModule } from './prisma/prisma.service';
+import { ProjectsModule } from './projects/projects.module';
 import { RedisModule } from './redis/redis.service';
 import { TasksModule } from './tasks/tasks.module';
 import { UsersModule } from './users/users.controller';
@@ -35,7 +39,11 @@ import { UsersModule } from './users/users.controller';
     UsersModule,
     PreferencesModule,
     MyDayModule,
+    CategoriesModule,
     TasksModule,
+    GoalsModule,
+    ProjectsModule,
+    CalendarModule,
     HabitsModule,
   ],
   providers: [

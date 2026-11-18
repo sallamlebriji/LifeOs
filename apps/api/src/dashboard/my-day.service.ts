@@ -6,6 +6,7 @@ import {
   localWeekday,
   type MyDayResponse,
 } from '@lifeos/shared';
+import { CalendarService, occurrencesIn } from '../calendar/calendar.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { buildMyDay, type HabitRow } from './my-day.builder';
 
@@ -18,7 +19,10 @@ function dateOnly(key: string): Date {
 
 @Injectable()
 export class MyDayService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly calendar: CalendarService,
+  ) {}
 
   async get(userId: string, dateKey?: string, now: Date = new Date()): Promise<MyDayResponse> {
     const user = await this.prisma.user.findUniqueOrThrow({
@@ -37,12 +41,7 @@ export class MyDayService {
 
     // Every query is scoped by userId — the only source of which is the verified token.
     const [events, taskBlocks, tasks, habits, goals] = await Promise.all([
-      this.prisma.calendarEvent.findMany({
-        where: { userId, startAt: { lt: dayRange.end }, endAt: { gt: dayRange.start } },
-        include: { category: categorySelect },
-        orderBy: { startAt: 'asc' },
-        take: 200,
-      }),
+      this.calendar.rowsFor(userId, dayRange).then((rows) => occurrencesIn(rows, dayRange)),
       this.prisma.taskSchedule.findMany({
         where: {
           userId,
@@ -114,6 +113,12 @@ export class MyDayService {
         color: h.color,
         icon: h.icon,
         completedDates: h.logs.map((l) => l.date.toISOString().slice(0, 10)),
+        schedule: {
+          frequency: h.frequency,
+          daysOfWeek: Array.isArray(h.daysOfWeek) ? (h.daysOfWeek as number[]) : null,
+          timesPerWeek: h.timesPerWeek,
+        },
+        weekStartsOn: prefs?.weekStartsOn ?? 1,
       }));
 
     return buildMyDay({
@@ -130,8 +135,8 @@ export class MyDayService {
       events: events.map((e) => ({
         id: e.id,
         title: e.title,
-        startAt: e.startAt,
-        endAt: e.endAt,
+        startAt: new Date(e.startAt),
+        endAt: new Date(e.endAt),
         allDay: e.allDay,
         location: e.location,
         locked: e.locked,
