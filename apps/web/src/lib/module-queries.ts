@@ -9,12 +9,17 @@ import {
   type GoalDto,
   type HabitDto,
   type Page,
+  type PlannerChatResponse,
+  type PlannerStatusDto,
+  type ProposalDto,
   type ProjectDto,
   type TaskDetailDto,
   type TaskDto,
 } from '@lifeos/shared';
 import {
   type AvailabilityRuleInput,
+  type ChangeDecisionInput,
+  type PlanRequestInput,
   type CreateEventInput,
   type CreateGoalInput,
   type CreateHabitInput,
@@ -262,5 +267,68 @@ export function useHabitDay() {
     },
     onError: (_e, _v, ctx) => ctx?.previous && qc.setQueryData(key, ctx.previous),
     onSettled: () => Promise.all(HABIT_FAMILIES.map((f) => qc.invalidateQueries({ queryKey: [f] }))),
+  });
+}
+
+// ─── Planner (Phase 3) ───────────────────────────────────────────────────
+
+export function usePlannerStatus() {
+  return useQuery({
+    queryKey: ['planner-status'],
+    queryFn: ({ signal }) => api<PlannerStatusDto>('/planner/status', { signal }),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useProposals() {
+  return useQuery({
+    queryKey: ['proposals'],
+    queryFn: ({ signal }) => api<ProposalDto[]>('/planner/proposals', { signal }),
+  });
+}
+
+export function useProposal(id: string | null) {
+  return useQuery({
+    queryKey: ['proposal', id],
+    queryFn: ({ signal }) => api<ProposalDto>(`/planner/proposals/${id}`, { signal }),
+    enabled: !!id,
+  });
+}
+
+const PLAN_FAMILIES = ['proposals', 'proposal', 'calendar', 'my-day', 'tasks'];
+
+function useSetProposal() {
+  const qc = useQueryClient();
+  return (p: ProposalDto) => {
+    qc.setQueryData(['proposal', p.id], p);
+    void qc.invalidateQueries({ queryKey: ['proposals'] });
+  };
+}
+
+export function usePropose() {
+  const set = useSetProposal();
+  return useMutation({
+    mutationFn: (body: PlanRequestInput) => api<ProposalDto>('/planner/proposals', { method: 'POST', body }),
+    onSuccess: set,
+  });
+}
+
+export function useDecideChange() {
+  const set = useSetProposal();
+  return useMutation({
+    mutationFn: ({ proposalId, changeId, ...body }: ChangeDecisionInput & { proposalId: string; changeId: string }) =>
+      api<ProposalDto>(`/planner/proposals/${proposalId}/changes/${changeId}`, { method: 'PATCH', body }),
+    onSuccess: set,
+  });
+}
+
+export const useProposalAction = (action: 'apply' | 'reject' | 'regenerate' | 'revert') =>
+  useMutate((id: string) => api<ProposalDto>(`/planner/proposals/${id}/${action}`, { method: 'POST', body: {} }), PLAN_FAMILIES);
+
+export function usePlannerChat() {
+  const set = useSetProposal();
+  return useMutation({
+    mutationFn: (body: { message: string; conversationId?: string }) => api<PlannerChatResponse>('/planner/chat', { method: 'POST', body }),
+    onSuccess: (res) => res.proposal && set(res.proposal),
   });
 }

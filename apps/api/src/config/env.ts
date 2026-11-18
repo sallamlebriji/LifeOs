@@ -17,6 +17,13 @@ export const envSchema = z.object({
     .transform((v) => v === 'true'),
   MAIL_TRANSPORT: z.enum(['log']).default('log'),
   APP_TIMEZONE: z.string().default('Africa/Casablanca'),
+  // AI planner (optional). Without these the planner works from the structured
+  // form only, and the chat endpoint answers 503 "not configured".
+  AI_PROVIDER: z.enum(['openai', '']).default(''),
+  AI_MODEL: z.string().max(100).default(''),
+  OPENAI_API_KEY: z.string().max(500).default(''),
+  OPENAI_BASE_URL: z.union([z.url(), z.literal('')]).default(''),
+  PROPOSAL_TTL_HOURS: z.coerce.number().int().min(1).max(168).default(24),
 });
 
 export type Env = z.infer<typeof envSchema>;

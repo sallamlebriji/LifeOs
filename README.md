@@ -2,7 +2,7 @@
 
 A personal operating system: goals, tasks, calendar, habits and an AI planner that **proposes** realistic schedules a deterministic engine validates and **you approve**.
 
-> **Status: Phases 1–2 complete** (foundation; tasks, goals, projects, calendar, availability, habits). See [docs/roadmap.md](docs/roadmap.md) for what ships next.
+> **Status: Phases 1–3 complete** (foundation; tasks, goals, projects, calendar, availability, habits; AI planner). See [docs/roadmap.md](docs/roadmap.md) for what ships next.
 
 ## Stack
 
@@ -23,7 +23,9 @@ apps/
   web/                 Next.js web app
 packages/
   database/            Prisma schema, migrations, seed, client
-  shared/              Types, constants, timezone & interval helpers
+  shared/              Types, constants, timezone, recurrence & interval helpers
+  scheduling-engine/   Deterministic scheduler (pure, property-tested)
+  ai/                  AI provider abstraction (OpenAI), Zod-validated output
   validation/          Zod schemas shared by API and clients
   ui/                  Design tokens (CSS) + React primitives
   config/              Shared ESLint config
@@ -33,7 +35,9 @@ docs/                  Architecture, database, API, security, roadmap…
 docker-compose.yml     MySQL 8.4 + Redis 7 for local development
 ```
 
-`apps/mobile`, `packages/scheduling-engine` and `packages/ai` are created in their own phases (6 and 3) so nothing ships as an empty placeholder.
+`apps/mobile` is created in Phase 6 so nothing ships as an empty placeholder.
+
+**AI (optional):** set `AI_PROVIDER=openai`, `AI_MODEL` and `OPENAI_API_KEY` in `.env` to enable plain-language planning. Without them the planner works from its form, and the chat says it isn't configured.
 
 ## Getting started
 
@@ -97,6 +101,7 @@ The web app proxies `/api/v1/*` to the API, so auth cookies stay first-party.
 
 - **Windows: `EPERM … query_engine-windows.dll.node`** during `pnpm build`/`prisma generate` — the running API holds the Prisma engine file. Stop `pnpm dev` and run it again.
 - **Times off by an hour for Morocco** — Morocco moved to UTC+0 on 2026-09-20. Runtimes bundling older tzdata (Node 24.15 ships 2026a) still apply UTC+1. The API logs its tzdata version at startup; update Node when a newer tzdata is available.
+- **Lower-case table names in generated migrations** — on Windows, MySQL's `lower_case_table_names=1` can make `prisma migrate dev` emit `ALTER TABLE planningproposal`. Check the generated SQL and keep PascalCase table names, or Linux servers will fail.
 - **Docker Desktop fails with a `dockerInference` error** — quit Docker Desktop, delete `%LOCALAPPDATA%\Docker\run\dockerInference` (may need an admin shell or a reboot), then start it again.
 
 ## Documentation

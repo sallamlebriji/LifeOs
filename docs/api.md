@@ -103,6 +103,21 @@ The Kanban board is `GET /tasks?projectId=…&sort=manual` + `PATCH /tasks/:id/s
 | POST / PATCH / DELETE | `/habits[/:id]` | `DAILY`; `WEEKLY` + `daysOfWeek`; `CUSTOM` + `timesPerWeek` or days. `{ archived: true }` archives. `reminderTime` is stored; delivery ships with notifications (Phase 5) |
 | PUT | `/habits/:id/completion` | `{ date, done }` — idempotent |
 
+## Planner (Phase 3)
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/planner/status` | `{ aiConfigured, provider, model }` |
+| POST | `/planner/proposals` | `{ startDate, endDate (max 14 days), includeOpenTasks, taskIds?, activities[] }` returns a proposal; writes nothing to the calendar |
+| GET | `/planner/proposals[/:id]` | Recent proposals; expired ones are marked `EXPIRED` |
+| PATCH | `/planner/proposals/:id/changes/:changeId` | `{ decision: ACCEPTED, REJECTED or MODIFIED, startAt?, endAt? }`; moves are re-checked (409 on overlap) |
+| POST | `/planner/proposals/:id/apply` | Applies non-rejected changes atomically; **409 `STALE_PROPOSAL`** if anything changed since |
+| POST | `/planner/proposals/:id/reject`, `/regenerate`, `/revert` | Discard; new revision (old becomes `SUPERSEDED`); undo an applied plan |
+| POST | `/planner/chat` | `{ message, conversationId? }` returns `{ conversationId, reply, proposal or null }`; **503 `AI_NOT_CONFIGURED`** without a provider |
+| GET | `/planner/conversations/:id` | Messages of one conversation |
+
+`GET /calendar/events` also returns `taskBlocks` (scheduled work on tasks).
+
 ## Health
 
 `GET /health` → `{ status: ok | degraded | down, checks: { mysql, redis } }`. 503 when MySQL is unreachable; Redis down is `degraded`.

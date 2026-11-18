@@ -143,8 +143,8 @@ export class CalendarService {
   ) {}
 
   /** Series rows that may produce occurrences in `range`. */
-  async rowsFor(userId: string, range: UtcRange): Promise<EventRow[]> {
-    return this.prisma.calendarEvent.findMany({
+  async rowsFor(userId: string, range: UtcRange, db: Pick<PrismaService, 'calendarEvent'> | Prisma.TransactionClient = this.prisma): Promise<EventRow[]> {
+    return db.calendarEvent.findMany({
       where: {
         userId,
         OR: [
@@ -160,8 +160,30 @@ export class CalendarService {
 
   async range(userId: string, q: CalendarRangeQuery): Promise<CalendarRangeResponse> {
     const range = { start: q.from, end: q.to };
-    const events = occurrencesIn(await this.rowsFor(userId, range), range);
-    return { events, conflicts: conflictsAmong(events) };
+    const [rows, blocks] = await Promise.all([
+      this.rowsFor(userId, range),
+      this.prisma.taskSchedule.findMany({
+        where: { userId, status: { not: 'CANCELLED' }, startAt: { lt: range.end }, endAt: { gt: range.start } },
+        include: { task: { select: { title: true, status: true } } },
+        orderBy: { startAt: 'asc' },
+        take: 500,
+      }),
+    ]);
+    const events = occurrencesIn(rows, range);
+    return {
+      events,
+      conflicts: conflictsAmong(events),
+      taskBlocks: blocks.map((b) => ({
+        id: b.id,
+        taskId: b.taskId,
+        title: b.task.title,
+        startAt: b.startAt.toISOString(),
+        endAt: b.endAt.toISOString(),
+        status: b.status,
+        source: b.source,
+        taskStatus: b.task.status,
+      })),
+    };
   }
 
   /** Other events overlapping any occurrence of `event` within the next four weeks of it. */

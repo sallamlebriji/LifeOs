@@ -175,6 +175,7 @@ export default function CalendarPage() {
           <TimeGrid
             days={days}
             events={events}
+            taskBlocks={range.data?.taskBlocks ?? []}
             conflictIds={conflictIds}
             timezone={tz}
             now={now}

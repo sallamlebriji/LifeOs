@@ -20,9 +20,15 @@ importers:
 
   apps/api:
     dependencies:
+      '@lifeos/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@lifeos/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@lifeos/scheduling-engine':
+        specifier: workspace:*
+        version: link:../../packages/scheduling-engine
       '@lifeos/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -206,6 +212,28 @@ importers:
         specifier: ^3.2.0
         version: 3.2.7(@types/node@22.20.5)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.15)
 
+  packages/ai:
+    dependencies:
+      '@lifeos/validation':
+        specifier: workspace:*
+        version: link:../validation
+      zod:
+        specifier: ^4.1.0
+        version: 4.6.7
+    devDependencies:
+      '@lifeos/config':
+        specifier: workspace:*
+        version: link:../config
+      eslint:
+        specifier: ^9.30.0
+        version: 9.39.5(jiti@2.7.0)
+      typescript:
+        specifier: ~5.9.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.0
+        version: 3.2.7(@types/node@22.20.5)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.15)
+
   packages/config:
     dependencies:
       '@eslint/js':
@@ -254,6 +282,25 @@ importers:
       typescript:
         specifier: ~5.9.0
         version: 5.9.3
+
+  packages/scheduling-engine:
+    dependencies:
+      '@lifeos/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      '@lifeos/config':
+        specifier: workspace:*
+        version: link:../config
+      eslint:
+        specifier: ^9.30.0
+        version: 9.39.5(jiti@2.7.0)
+      typescript:
+        specifier: ~5.9.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.0
+        version: 3.2.7(@types/node@22.20.5)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.15)
 
   packages/shared:
     dependencies:

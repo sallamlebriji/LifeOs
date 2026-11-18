@@ -18,7 +18,11 @@ export type AuditAction =
   | 'goal.deleted'
   | 'project.deleted'
   | 'event.deleted'
-  | 'habit.deleted';
+  | 'habit.deleted'
+  | 'proposal.created'
+  | 'proposal.applied'
+  | 'proposal.rejected'
+  | 'proposal.reverted';
 
 /**
  * Append-only audit trail for security-relevant events. Never pass secrets,

@@ -140,6 +140,7 @@ enum ProposalStatus {
   EXPIRED
   SUPERSEDED
   FAILED
+  REVERTED
 }
 
 enum PlanningChangeType {

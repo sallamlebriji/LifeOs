@@ -1,6 +1,14 @@
-# Scheduling engine (design — implementation in Phase 3)
+# Scheduling engine (implemented in Phase 3)
 
-> Not implemented yet. Phase 1 ships the building blocks it will reuse: DST-safe day windows (`localDayRange`, `localTimeOnDay`) and interval maths (`mergeIntervals`, `freeIntervals`) in `@lifeos/shared`, all unit-tested. My Day's free-time calculation already uses them.
+> `packages/scheduling-engine`: `schedule(input)` and an independent `verify(input, result)`. Tests cover preferred-time placement with buffers, locked/unavailable/protected time, splitting with a minimum session, recovery spacing, work-hours windows, every unscheduled reason, a DST day, order-independence, and a 150-case seeded property test (no hard-constraint violation; every requested minute is either placed or reported).
+
+## Algorithm
+
+1. Per local day: the day window (clipped to now) minus busy blocks plus/minus the buffer, unavailable blocks, and weekly *unavailable* / *protected free time* rules. Working hours come from weekly *working hours* rules, else from preferences on work days.
+2. Activities are ordered: fixed-time first, then by priority x w1 + urgency x w2 + goal importance x w3, then id (determinism).
+3. Each session or chunk scans 15-minute starts in every allowed interval, filters hard constraints (deadline, earliest start, daily focus limit, recovery gap, sessions per day, work/personal window) and scores time fit x w4 + urgency x w2 + continuity x w5. Ties keep the earliest start.
+4. Splittable tasks try the whole duration first, then the largest chunk at least the minimum session (at most 2 h), never leaving an unplaceable remainder.
+5. What doesn't fit is classified by relaxing one constraint at a time: `DEADLINE_PASSED`, `DAILY_FOCUS_LIMIT`, `NO_TIME_BEFORE_DEADLINE`, `FIXED_TIME_TAKEN`, `NO_FREE_SLOT`, each with a suggestion.
 
 ## Shape
 

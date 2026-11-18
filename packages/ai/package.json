@@ -1,0 +1,24 @@
+{
+  "name": "@lifeos/ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI provider abstraction with Zod-validated structured outputs. The model only proposes; it never writes data.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lifeos/validation": "workspace:*",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@lifeos/config": "workspace:*",
+    "eslint": "^9.30.0",
+    "typescript": "~5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

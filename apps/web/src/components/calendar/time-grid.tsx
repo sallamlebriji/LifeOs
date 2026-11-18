@@ -1,6 +1,6 @@
 'use client';
 
-import { type CalendarEventDto } from '@lifeos/shared';
+import { type CalendarEventDto, type TaskBlockDto } from '@lifeos/shared';
 import { cn } from '@lifeos/ui';
 import { AlertTriangle, Lock, Repeat } from 'lucide-react';
 import { type PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react';
@@ -27,6 +27,7 @@ const eventColor = (e: CalendarEventDto) => e.color ?? e.category?.color ?? 'var
 export function TimeGrid({
   days,
   events,
+  taskBlocks = [],
   conflictIds,
   timezone,
   now,
@@ -36,6 +37,7 @@ export function TimeGrid({
 }: {
   days: string[];
   events: CalendarEventDto[];
+  taskBlocks?: TaskBlockDto[];
   conflictIds: Set<string>;
   timezone: string;
   now: Date;
@@ -206,6 +208,22 @@ export function TimeGrid({
                     <span className="h-[2px] flex-1 bg-critical" />
                   </div>
                 ) : null}
+                {taskBlocks.flatMap((b) =>
+                  segmentsFor(b.startAt, b.endAt, [day], timezone).map((seg) => (
+                    <div
+                      key={`${b.id}@${day}`}
+                      role="note"
+                      aria-label={`${t('calendar.taskBlock')}: ${b.title}, ${timeFmt(b.startAt)}–${timeFmt(b.endAt)}`}
+                      className={cn(
+                        'pointer-events-none absolute inset-x-0.5 z-[5] overflow-hidden rounded-[6px] border border-dashed border-accent/60 bg-accent-soft/60 px-1.5 py-1 text-[0.75rem] leading-tight',
+                        b.taskStatus === 'COMPLETED' && 'opacity-50',
+                      )}
+                      style={{ top: (seg.start / 60) * HOUR_PX, height: Math.max(18, ((seg.end - seg.start) / 60) * HOUR_PX - 2) }}
+                    >
+                      <span className={cn('block truncate font-medium text-accent', b.taskStatus === 'COMPLETED' && 'line-through')}>{b.title}</span>
+                    </div>
+                  )),
+                )}
                 {(perDay.get(day) ?? []).map((p) => {
                   const e = p.item;
                   const shown = display(e);

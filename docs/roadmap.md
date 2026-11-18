@@ -30,8 +30,11 @@ Done:
 
 Not in Phase 2: editing a single occurrence of a recurring event (edits apply to the series), reminder delivery (Phase 5).
 
-## Phase 3 — AI personal planner
+## Phase 3 — AI personal planner ✅
 
+Done: deterministic scheduling engine package (property-tested); AI provider package (OpenAI, JSON-schema output validated with Zod, corrective retry, backoff); planner API (propose, per-change accept/reject/move, transactional apply with fingerprint and version checks, expiry, regenerate/supersede, undo, audit); chat endpoint (503 when not configured); planner UI with before/after day strips; task blocks shown on the calendar. Not verified: live OpenAI calls — the provider is tested against a stubbed HTTP layer only, as no API key was available.
+
+Original scope:
 `packages/scheduling-engine` (deterministic, extensively tested), `packages/ai` (provider abstraction, OpenAI first, structured outputs validated with Zod), conversation UI, planning proposals with before/after comparison, per-change accept/modify/reject, transactional application with optimistic concurrency, expiry and audit trail. See [ai-planner.md](ai-planner.md) and [scheduling-engine.md](scheduling-engine.md).
 
 ## Phase 4 — Advanced modules

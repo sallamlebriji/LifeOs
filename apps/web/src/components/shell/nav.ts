@@ -58,7 +58,7 @@ export const NAV: NavGroup[] = [
   {
     label: 'nav.groupIntelligence',
     items: [
-      { slug: 'planner', href: '/planner', label: 'nav.planner', icon: Sparkles, phase: 3, summary: 'Describe your week in plain language; the planner proposes a schedule you review and approve.' },
+      { slug: 'planner', href: '/planner', label: 'nav.planner', icon: Sparkles, summary: 'Describe your week in plain language; the planner proposes a schedule you review and approve.' },
       { slug: 'analytics', href: '/analytics', label: 'nav.analytics', icon: BarChart3, phase: 4, summary: 'Completion rates, time allocation, habit consistency and planned vs. actual time.' },
     ],
   },

@@ -14,6 +14,7 @@ import { HabitsModule } from './habits/habits.module';
 import { HealthModule } from './health/health.controller';
 import { MailModule } from './mail/mail.service';
 import { PreferencesModule } from './preferences/preferences.controller';
+import { PlannerModule } from './planner/planner.module';
 import { PrismaModule } from './prisma/prisma.service';
 import { ProjectsModule } from './projects/projects.module';
 import { RedisModule } from './redis/redis.service';
@@ -45,6 +46,7 @@ import { UsersModule } from './users/users.controller';
     ProjectsModule,
     CalendarModule,
     HabitsModule,
+    PlannerModule,
   ],
   providers: [
     // Order matters: rate-limit → CSRF → authenticate → authorise.

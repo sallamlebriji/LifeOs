@@ -153,9 +153,22 @@ export interface ConflictDto {
   overlapMinutes: number;
 }
 
+/** A scheduled block of work on a task (created by applying a plan). */
+export interface TaskBlockDto {
+  id: string;
+  taskId: string;
+  title: string;
+  startAt: string;
+  endAt: string;
+  status: 'PLANNED' | 'DONE' | 'MISSED' | 'CANCELLED';
+  source: 'MANUAL' | 'AI' | 'EXTERNAL';
+  taskStatus: 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+}
+
 export interface CalendarRangeResponse {
   events: CalendarEventDto[];
   conflicts: ConflictDto[];
+  taskBlocks: TaskBlockDto[];
 }
 
 export interface EventMutationResponse {
@@ -205,4 +218,48 @@ export interface HabitStats {
   completedThisWeek: number;
   dueThisWeek: number;
   totalCompletions: number;
+}
+
+// ─── Planner (Phase 3) ───────────────────────────────────────────────────
+
+export type ProposalStatusValue = 'PENDING' | 'APPLIED' | 'REJECTED' | 'EXPIRED' | 'SUPERSEDED' | 'FAILED' | 'REVERTED';
+
+export interface PlanningChangeDto {
+  id: string;
+  type: 'CREATE_EVENT' | 'UPDATE_EVENT' | 'DELETE_EVENT' | 'SCHEDULE_TASK' | 'UNSCHEDULED';
+  decision: 'PROPOSED' | 'ACCEPTED' | 'MODIFIED' | 'REJECTED';
+  title: string;
+  targetTaskId: string | null;
+  startAt: string | null;
+  endAt: string | null;
+  reason: string | null;
+}
+
+export interface ProposalDto {
+  id: string;
+  status: ProposalStatusValue;
+  revision: number;
+  periodStart: string;
+  periodEnd: string;
+  summary: string | null;
+  explanation: { lines: string[]; dailyWorkload: Record<string, number>; freeMinutes: number; existingConflicts: number } | null;
+  score: number | null;
+  expiresAt: string;
+  createdAt: string;
+  appliedAt: string | null;
+  conversationId: string | null;
+  supersedesId: string | null;
+  changes: PlanningChangeDto[];
+}
+
+export interface PlannerChatResponse {
+  conversationId: string;
+  reply: string;
+  proposal: ProposalDto | null;
+}
+
+export interface PlannerStatusDto {
+  aiConfigured: boolean;
+  provider: string | null;
+  model: string | null;
 }
