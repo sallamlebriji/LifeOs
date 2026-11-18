@@ -1,0 +1,4 @@
+# Prisma checksums migration files byte-for-byte: keep them LF everywhere.
+*.sql text eol=lf
+*.prisma text eol=lf
+migration_lock.toml text eol=lf

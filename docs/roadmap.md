@@ -37,7 +37,11 @@ Done: deterministic scheduling engine package (property-tested); AI provider pac
 Original scope:
 `packages/scheduling-engine` (deterministic, extensively tested), `packages/ai` (provider abstraction, OpenAI first, structured outputs validated with Zod), conversation UI, planning proposals with before/after comparison, per-change accept/modify/reject, transactional application with optimistic concurrency, expiry and audit trail. See [ai-planner.md](ai-planner.md) and [scheduling-engine.md](scheduling-engine.md).
 
-## Phase 4 — Advanced modules
+## Phase 4 — Advanced modules ✅
+
+Done: Sports (new `Workout` / `ExerciseLog` tables, weekly target, 8-week history, minutes by type, recovery hint); Study (subjects with chapter outlines, learning/revision/exam sessions, SM-2 spaced repetition with due reviews, planner option to add study time); Travel (trips, itinerary with costs, checklist, budget vs spent, document references, calendar blocking honoured by the planner); Analytics (weekly/monthly: tasks, completion rate, time by category, estimated vs tracked, habit consistency, workouts, study, goals, daily focus).
+
+Original scope:
 
 Sports & fitness (adds `Workout`/`ExerciseLog`), Study (courses/chapters, revision planning, spaced repetition), Travel (itinerary, checklist, calendar blocking), Analytics with weekly and monthly reports.
 

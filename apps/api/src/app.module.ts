@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuditModule } from './audit/audit.service';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { CategoriesModule } from './categories/categories.module';
@@ -18,6 +19,9 @@ import { PlannerModule } from './planner/planner.module';
 import { PrismaModule } from './prisma/prisma.service';
 import { ProjectsModule } from './projects/projects.module';
 import { RedisModule } from './redis/redis.service';
+import { SportsModule } from './sports/sports.module';
+import { StudyModule } from './study/study.module';
+import { TravelModule } from './travel/travel.module';
 import { TasksModule } from './tasks/tasks.module';
 import { UsersModule } from './users/users.controller';
 
@@ -47,6 +51,10 @@ import { UsersModule } from './users/users.controller';
     CalendarModule,
     HabitsModule,
     PlannerModule,
+    SportsModule,
+    StudyModule,
+    TravelModule,
+    AnalyticsModule,
   ],
   providers: [
     // Order matters: rate-limit → CSRF → authenticate → authorise.

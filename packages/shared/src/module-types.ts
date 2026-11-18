@@ -263,3 +263,140 @@ export interface PlannerStatusDto {
   provider: string | null;
   model: string | null;
 }
+
+// ─── Sports, study, travel, analytics (Phase 4) ──────────────────────────
+
+export type WorkoutTypeValue = 'STRENGTH' | 'CARDIO' | 'MOBILITY' | 'SPORT' | 'OTHER';
+
+export interface ExerciseDto {
+  id: string;
+  name: string;
+  sets: number | null;
+  reps: number | null;
+  weightKg: number | null;
+  distanceKm: number | null;
+  durationMinutes: number | null;
+}
+
+export interface WorkoutDto {
+  id: string;
+  title: string;
+  type: WorkoutTypeValue;
+  startAt: string;
+  durationMinutes: number;
+  intensity: number | null;
+  notes: string | null;
+  exercises: ExerciseDto[];
+}
+
+export interface SportsStatsDto {
+  weekStart: string;
+  weeklyTarget: number;
+  thisWeek: { sessions: number; minutes: number };
+  /** Consecutive past weeks (plus this one once met) reaching the target. */
+  weekStreak: number;
+  /** Last 8 weeks, oldest first. */
+  weeks: Array<{ weekStart: string; sessions: number; minutes: number }>;
+  minutesByType: Record<WorkoutTypeValue, number>;
+  lastWorkoutAt: string | null;
+  /** Days since the last hard session (intensity ≥ 8), for recovery hints. */
+  daysSinceHardSession: number | null;
+}
+
+export interface StudyChapter {
+  id: string;
+  title: string;
+  done: boolean;
+}
+
+export interface StudySubjectDto {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+  importance: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  examDate: string | null;
+  weeklyTargetMinutes: number | null;
+  chapters: StudyChapter[];
+  minutesThisWeek: number;
+  progress: number;
+  dueReviews: number;
+}
+
+export interface StudySessionDto {
+  id: string;
+  subjectId: string;
+  subjectName: string;
+  kind: 'LEARNING' | 'REVISION' | 'EXAM';
+  topic: string | null;
+  startAt: string;
+  endAt: string;
+  completedAt: string | null;
+  quality: number | null;
+  intervalDays: number | null;
+  nextReviewAt: string | null;
+  notes: string | null;
+}
+
+export interface DueReviewDto {
+  subjectId: string;
+  subjectName: string;
+  topic: string;
+  dueAt: string;
+  lastQuality: number | null;
+  repetitions: number;
+}
+
+export interface TripChecklistItem {
+  id: string;
+  label: string;
+  done: boolean;
+}
+
+export interface TripActivityDto {
+  id: string;
+  title: string;
+  description: string | null;
+  location: string | null;
+  startAt: string | null;
+  endAt: string | null;
+  reservation: string | null;
+  cost: number | null;
+}
+
+export interface TripDto {
+  id: string;
+  title: string;
+  destination: string;
+  departureAt: string;
+  returnAt: string;
+  timezone: string;
+  status: 'PLANNING' | 'BOOKED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
+  transportation: string | null;
+  accommodation: string | null;
+  budgetAmount: number | null;
+  budgetCurrency: string | null;
+  spent: number;
+  companions: string[];
+  checklist: TripChecklistItem[];
+  documents: Array<{ label: string; reference: string }>;
+  notes: string | null;
+  blocksCalendar: boolean;
+  activities: TripActivityDto[];
+}
+
+export interface AnalyticsDto {
+  period: 'week' | 'month';
+  start: string;
+  end: string;
+  tasks: { created: number; completed: number; overdueOpen: number; completionRate: number };
+  /** Category name → minutes of events and task blocks. */
+  timeByCategory: Array<{ name: string; color: string; minutes: number }>;
+  plannedVsActual: { plannedMinutes: number; trackedMinutes: number };
+  habits: { consistency: number; perHabit: Array<{ name: string; done: number; due: number }> };
+  workouts: { sessions: number; minutes: number };
+  study: { minutes: number; reviewsDone: number };
+  goals: Array<{ title: string; progress: number; level: string }>;
+  /** Per local day: completed tasks and focus minutes. */
+  daily: Array<{ date: string; tasksCompleted: number; focusMinutes: number }>;
+}

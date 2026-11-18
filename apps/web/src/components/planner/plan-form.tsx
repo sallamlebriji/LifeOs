@@ -38,6 +38,7 @@ export function PlanForm({
   const [start, setStart] = useState(today);
   const [end, setEnd] = useState(weekEnd);
   const [includeTasks, setIncludeTasks] = useState(true);
+  const [includeStudy, setIncludeStudy] = useState(false);
   const [rows, setRows] = useState<ActivityRow[]>([]);
 
   function submit(e: FormEvent) {
@@ -46,6 +47,7 @@ export function PlanForm({
       startDate: start,
       endDate: end,
       includeOpenTasks: includeTasks,
+      includeStudy,
       activities: rows
         .filter((r) => r.title.trim())
         .map((r) => ({
@@ -86,6 +88,14 @@ export function PlanForm({
         <span>
           {t('planner.includeTasks')}
           <span className="block text-[0.8125rem] text-tertiary">{t('planner.includeTasksHint')}</span>
+        </span>
+      </label>
+
+      <label className="flex items-start gap-2.5 text-[0.9375rem]">
+        <input type="checkbox" className="mt-1 h-4 w-4 accent-[var(--accent)]" checked={includeStudy} onChange={(e) => setIncludeStudy(e.target.checked)} />
+        <span>
+          {t('planner.includeStudy')}
+          <span className="block text-[0.8125rem] text-tertiary">{t('planner.includeStudyHint')}</span>
         </span>
       </label>
 

@@ -2,7 +2,14 @@
 
 /** TanStack Query hooks for the Phase 2 modules. */
 import {
+  type AnalyticsDto,
   type AvailabilityRuleDto,
+  type DueReviewDto,
+  type SportsStatsDto,
+  type StudySessionDto,
+  type StudySubjectDto,
+  type TripDto,
+  type WorkoutDto,
   type CalendarRangeResponse,
   type CategoryDto,
   type EventMutationResponse,
@@ -19,6 +26,14 @@ import {
 import {
   type AvailabilityRuleInput,
   type ChangeDecisionInput,
+  type CreateStudySessionInput,
+  type CreateSubjectInput,
+  type CreateTripInput,
+  type CreateWorkoutInput,
+  type TripActivityInput,
+  type UpdateSubjectInput,
+  type UpdateTripInput,
+  type UpdateWorkoutInput,
   type PlanRequestInput,
   type CreateEventInput,
   type CreateGoalInput,
@@ -330,5 +345,58 @@ export function usePlannerChat() {
   return useMutation({
     mutationFn: (body: { message: string; conversationId?: string }) => api<PlannerChatResponse>('/planner/chat', { method: 'POST', body }),
     onSuccess: (res) => res.proposal && set(res.proposal),
+  });
+}
+
+// ─── Sports, study, travel, analytics (Phase 4) ──────────────────────────
+
+export function useWorkouts() {
+  return useQuery({ queryKey: ['workouts'], queryFn: ({ signal }) => api<WorkoutDto[]>('/sports/workouts', { query: { limit: 50 }, signal }) });
+}
+export function useSportsStats() {
+  return useQuery({ queryKey: ['sports-stats'], queryFn: ({ signal }) => api<SportsStatsDto>('/sports/stats', { signal }) });
+}
+const SPORT_FAMILIES = ['workouts', 'sports-stats', 'analytics'];
+export const useCreateWorkout = () => useMutate((body: CreateWorkoutInput) => api<WorkoutDto>('/sports/workouts', { method: 'POST', body }), SPORT_FAMILIES);
+export const useUpdateWorkout = () =>
+  useMutate(({ id, ...body }: UpdateWorkoutInput & { id: string }) => api<WorkoutDto>(`/sports/workouts/${id}`, { method: 'PATCH', body }), SPORT_FAMILIES);
+export const useDeleteWorkout = () => useMutate((id: string) => api<void>(`/sports/workouts/${id}`, { method: 'DELETE' }), SPORT_FAMILIES);
+export const useWorkoutTarget = () =>
+  useMutate((weeklyWorkoutTarget: number) => api<SportsStatsDto>('/sports/target', { method: 'PUT', body: { weeklyWorkoutTarget } }), SPORT_FAMILIES);
+
+export function useSubjects() {
+  return useQuery({ queryKey: ['subjects'], queryFn: ({ signal }) => api<StudySubjectDto[]>('/study/subjects', { signal }) });
+}
+export function useStudySessions() {
+  return useQuery({ queryKey: ['study-sessions'], queryFn: ({ signal }) => api<StudySessionDto[]>('/study/sessions', { query: { limit: 30 }, signal }) });
+}
+export function useDueReviews() {
+  return useQuery({ queryKey: ['due-reviews'], queryFn: ({ signal }) => api<DueReviewDto[]>('/study/reviews/due', { signal }) });
+}
+const STUDY_FAMILIES = ['subjects', 'study-sessions', 'due-reviews', 'analytics'];
+export const useCreateSubject = () => useMutate((body: CreateSubjectInput) => api<StudySubjectDto>('/study/subjects', { method: 'POST', body }), STUDY_FAMILIES);
+export const useUpdateSubject = () =>
+  useMutate(({ id, ...body }: UpdateSubjectInput & { id: string }) => api<StudySubjectDto>(`/study/subjects/${id}`, { method: 'PATCH', body }), STUDY_FAMILIES);
+export const useDeleteSubject = () => useMutate((id: string) => api<void>(`/study/subjects/${id}`, { method: 'DELETE' }), STUDY_FAMILIES);
+export const useCreateStudySession = () =>
+  useMutate((body: CreateStudySessionInput) => api<StudySessionDto>('/study/sessions', { method: 'POST', body }), STUDY_FAMILIES);
+
+export function useTrips(past = false) {
+  return useQuery({ queryKey: ['trips', past], queryFn: ({ signal }) => api<TripDto[]>('/trips', { query: { past: past ? 'true' : undefined }, signal }) });
+}
+const TRIP_FAMILIES = ['trips', 'calendar'];
+export const useCreateTrip = () => useMutate((body: CreateTripInput) => api<TripDto>('/trips', { method: 'POST', body }), TRIP_FAMILIES);
+export const useUpdateTrip = () => useMutate(({ id, ...body }: UpdateTripInput & { id: string }) => api<TripDto>(`/trips/${id}`, { method: 'PATCH', body }), TRIP_FAMILIES);
+export const useDeleteTrip = () => useMutate((id: string) => api<void>(`/trips/${id}`, { method: 'DELETE' }), TRIP_FAMILIES);
+export const useAddTripActivity = () =>
+  useMutate(({ tripId, ...body }: TripActivityInput & { tripId: string }) => api<TripDto>(`/trips/${tripId}/activities`, { method: 'POST', body }), TRIP_FAMILIES);
+export const useRemoveTripActivity = () =>
+  useMutate(({ tripId, id }: { tripId: string; id: string }) => api<TripDto>(`/trips/${tripId}/activities/${id}`, { method: 'DELETE' }), TRIP_FAMILIES);
+
+export function useAnalytics(period: 'week' | 'month', date?: string) {
+  return useQuery({
+    queryKey: ['analytics', period, date ?? 'now'],
+    queryFn: ({ signal }) => api<AnalyticsDto>('/analytics', { query: { period, date }, signal }),
+    placeholderData: (prev) => prev,
   });
 }

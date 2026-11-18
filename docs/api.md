@@ -118,6 +118,26 @@ The Kanban board is `GET /tasks?projectId=…&sort=manual` + `PATCH /tasks/:id/s
 
 `GET /calendar/events` also returns `taskBlocks` (scheduled work on tasks).
 
+## Sports, study, travel, analytics (Phase 4)
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET / POST | `/sports/workouts` | Workouts with exercises (`from`, `to`, `limit`) |
+| GET / PATCH / DELETE | `/sports/workouts/:id` | An `exercises` array replaces the list |
+| GET | `/sports/stats` | This week vs target, 8 weeks, minutes by type, days since a hard session |
+| PUT | `/sports/target` | `{ weeklyWorkoutTarget }` |
+| GET / POST | `/study/subjects` | Chapters, minutes this week, due reviews |
+| PATCH / DELETE | `/study/subjects/:id` | |
+| GET / POST | `/study/sessions` | A completed revision needs `quality` 0–5; spaced repetition is replayed from history |
+| POST | `/study/sessions/:id/complete` | `{ quality? }` |
+| GET | `/study/reviews/due` | Topics due today |
+| GET / POST | `/trips` | `past=true` for past trips |
+| GET / PATCH / DELETE | `/trips/:id` | Checklist, companions, documents (references only) |
+| POST / PUT / DELETE | `/trips/:id/activities[/:activityId]` | Itinerary items with costs |
+| GET | `/analytics?period=week|month&date=` | Report for the period containing `date` |
+
+`POST /planner/proposals` also accepts `includeStudy: true`.
+
 ## Health
 
 `GET /health` → `{ status: ok | degraded | down, checks: { mysql, redis } }`. 503 when MySQL is unreachable; Redis down is `degraded`.

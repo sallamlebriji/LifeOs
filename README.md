@@ -2,7 +2,7 @@
 
 A personal operating system: goals, tasks, calendar, habits and an AI planner that **proposes** realistic schedules a deterministic engine validates and **you approve**.
 
-> **Status: Phases 1–3 complete** (foundation; tasks, goals, projects, calendar, availability, habits; AI planner). See [docs/roadmap.md](docs/roadmap.md) for what ships next.
+> **Status: Phases 1–4 complete** (foundation; tasks, goals, projects, calendar, availability, habits; AI planner; sports, study, travel, analytics). See [docs/roadmap.md](docs/roadmap.md) for what ships next.
 
 ## Stack
 

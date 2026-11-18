@@ -26,6 +26,8 @@ export const planRequestSchema = z
     /** …or only these. */
     taskIds: z.array(z.uuid()).max(100).optional(),
     activities: z.array(plannedActivitySchema).max(20).default([]),
+    /** Add study time from subjects with a weekly target or an upcoming exam. */
+    includeStudy: z.boolean().default(false),
     conversationId: z.uuid().optional(),
     /** Free-text note shown on the proposal. */
     note: z.string().trim().max(500).optional(),
@@ -34,7 +36,7 @@ export const planRequestSchema = z
     if (v.endDate < v.startDate) ctx.addIssue({ code: 'custom', path: ['endDate'], message: 'End date is before the start date' });
     const days = (Date.parse(v.endDate) - Date.parse(v.startDate)) / 86_400_000 + 1;
     if (days > MAX_PLAN_DAYS) ctx.addIssue({ code: 'custom', path: ['endDate'], message: `Plan at most ${MAX_PLAN_DAYS} days at a time` });
-    if (!v.includeOpenTasks && !v.taskIds?.length && !v.activities.length) {
+    if (!v.includeOpenTasks && !v.taskIds?.length && !v.activities.length && !v.includeStudy) {
       ctx.addIssue({ code: 'custom', path: ['activities'], message: 'Nothing to plan — include tasks or add an activity' });
     }
   });

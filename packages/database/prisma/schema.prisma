@@ -119,6 +119,14 @@ enum HabitFrequency {
   CUSTOM
 }
 
+enum WorkoutType {
+  STRENGTH
+  CARDIO
+  MOBILITY
+  SPORT
+  OTHER
+}
+
 enum StudySessionKind {
   LEARNING
   REVISION
@@ -237,6 +245,7 @@ model User {
   aiConversations   AIConversation[]
   notifications     Notification[]
   integrations      Integration[]
+  workouts          Workout[]
 }
 
 model UserPreferences {
@@ -257,6 +266,7 @@ model UserPreferences {
   preferredFocusTime    TimeOfDay @default(MORNING)
   schedulingWeights     Json? // overrides for scheduling-engine weights
   notificationsEnabled  Boolean   @default(true)
+  weeklyWorkoutTarget   Int       @default(3) @db.TinyInt
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
@@ -615,6 +625,45 @@ model HabitLog {
   @@index([userId, date])
 }
 
+// ─── Sports & fitness ────────────────────────────────────────────────────
+
+model Workout {
+  id              String      @id @default(uuid()) @db.Char(36)
+  userId          String      @db.Char(36)
+  title           String      @db.VarChar(150)
+  type            WorkoutType @default(STRENGTH)
+  startAt         DateTime
+  durationMinutes Int         @db.SmallInt
+  /// Perceived effort, 1 (very easy) – 10 (max).
+  intensity       Int?        @db.TinyInt
+  notes           String?     @db.Text
+  /// Calendar event this session was planned as, if any.
+  eventId         String?     @db.Char(36)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises ExerciseLog[]
+
+  @@index([userId, startAt])
+}
+
+model ExerciseLog {
+  id              String   @id @default(uuid()) @db.Char(36)
+  workoutId       String   @db.Char(36)
+  name            String   @db.VarChar(120)
+  sets            Int?     @db.SmallInt
+  reps            Int?     @db.SmallInt
+  weightKg        Decimal? @db.Decimal(6, 2)
+  distanceKm      Decimal? @db.Decimal(7, 2)
+  durationMinutes Int?     @db.SmallInt
+  sortOrder       Int      @default(0)
+
+  workout Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  @@index([workoutId, sortOrder])
+}
+
 // ─── Study ───────────────────────────────────────────────────────────────
 
 model StudySubject {
@@ -647,7 +696,9 @@ model StudySession {
   startAt     DateTime
   endAt       DateTime
   completedAt DateTime?
-  /// Spaced-repetition hooks (SM-2 style) for future scheduling.
+  /// Recall quality 0–5 given when a revision is completed (SM-2 input).
+  quality     Int?             @db.TinyInt
+  /// Spaced-repetition state (SM-2) after this session.
   easeFactor  Decimal?         @db.Decimal(4, 2)
   intervalDays Int?            @db.SmallInt
   nextReviewAt DateTime?

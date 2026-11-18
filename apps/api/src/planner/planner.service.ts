@@ -155,6 +155,36 @@ export class PlannerService {
           fixedStart: t.schedulingMode === 'FIXED' ? t.fixedStartAt : null,
         });
     }
+    if (req.includeStudy) {
+      const subjects = await db.studySubject.findMany({
+        where: { userId, OR: [{ weeklyTargetMinutes: { gt: 0 } }, { examDate: { gt: periodStart } }] },
+        orderBy: { id: 'asc' },
+      });
+      const studied = await db.studySession.findMany({
+        where: { userId, startAt: { gte: periodStart, lt: periodEnd } },
+        select: { subjectId: true, startAt: true, endAt: true },
+      });
+      const days = (periodEnd.getTime() - periodStart.getTime()) / 86_400_000;
+      for (const s of subjects) {
+        const examSoon = s.examDate && s.examDate.getTime() - periodStart.getTime() < 21 * 86_400_000;
+        const target = Math.round(((s.weeklyTargetMinutes ?? (examSoon ? 300 : 0)) * days) / 7);
+        const done = studied.filter((x) => x.subjectId === s.id).reduce((m, x) => m + (x.endAt.getTime() - x.startAt.getTime()) / 60_000, 0);
+        const needed = Math.max(0, target - done);
+        if (needed < 30) continue;
+        const sessions = Math.min(7, Math.ceil(needed / 60));
+        activities.push({
+          id: `study:${s.id}`,
+          title: `Study: ${s.name}`,
+          kind: 'activity',
+          durationMinutes: Math.max(30, Math.round(needed / sessions / 15) * 15),
+          sessions,
+          priority: examSoon ? 'HIGH' : s.importance,
+          deadline: s.examDate && s.examDate < periodEnd ? s.examDate : null,
+          preferredTimeOfDay: prefs.preferredFocusTime,
+          window: 'any',
+        });
+      }
+    }
     req.activities.forEach((a, i) =>
       activities.push({
         id: `activity:${i}`,
@@ -227,7 +257,8 @@ export class PlannerService {
       ...result.scheduled.map((s, i) => {
         const a = activityById.get(s.activityId)!;
         const isTask = a.kind === 'task';
-        const extra = isTask ? null : reqActivities[Number(s.activityId.split(':')[1])];
+        const extra = s.activityId.startsWith('activity:') ? reqActivities[Number(s.activityId.split(':')[1])] : null;
+        const studyCategory = s.activityId.startsWith('study:') ? ('STUDY' as const) : undefined;
         return {
           type: isTask ? ('SCHEDULE_TASK' as const) : ('CREATE_EVENT' as const),
           title: a.sessions && a.sessions > 1 ? `${a.title} (${s.index + 1}/${a.sessions})` : a.title,
@@ -235,7 +266,11 @@ export class PlannerService {
           targetVersion: isTask ? (taskVersions.get(a.id) ?? null) : null,
           startAt: s.start,
           endAt: s.end,
-          after: { start: s.start.toISOString(), end: s.end.toISOString(), ...(extra?.category ? { categoryKind: extra.category } : {}) },
+          after: {
+            start: s.start.toISOString(),
+            end: s.end.toISOString(),
+            ...(extra?.category || studyCategory ? { categoryKind: extra?.category ?? studyCategory } : {}),
+          },
           reason: s.reasons.join(' · ') || null,
           sortOrder: i,
         };

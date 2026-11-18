@@ -6,3 +6,4 @@ export * from './recurrence';
 export * from './conflicts';
 export * from './habits';
 export * from './module-types';
+export * from './spaced';

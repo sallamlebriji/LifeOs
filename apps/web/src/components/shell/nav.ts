@@ -50,16 +50,16 @@ export const NAV: NavGroup[] = [
       { slug: 'tasks', href: '/tasks', label: 'nav.tasks', icon: CheckSquare, summary: 'Full task management: subtasks, dependencies, recurrence, splittable and fixed-time tasks.' },
       { slug: 'projects', href: '/projects', label: 'nav.projects', icon: FolderKanban, summary: 'Projects with milestones, a Kanban board, project calendar and time tracking.' },
       { slug: 'habits', href: '/habits', label: 'nav.habits', icon: Repeat, summary: 'Create habits with custom frequencies, reminders, streaks and weekly consistency.' },
-      { slug: 'sports', href: '/sports', label: 'nav.sports', icon: Dumbbell, phase: 4, summary: 'Workouts, training frequency, recovery days and weekly statistics.' },
-      { slug: 'study', href: '/study', label: 'nav.study', icon: BookOpen, phase: 4, summary: 'Subjects, courses, revision sessions and exams, ready for spaced repetition.' },
-      { slug: 'travel', href: '/travel', label: 'nav.travel', icon: Plane, phase: 4, summary: 'Trips with itinerary, reservations, budget, checklist and calendar blocking.' },
+      { slug: 'sports', href: '/sports', label: 'nav.sports', icon: Dumbbell, summary: 'Workouts, training frequency, recovery days and weekly statistics.' },
+      { slug: 'study', href: '/study', label: 'nav.study', icon: BookOpen, summary: 'Subjects, courses, revision sessions and exams, ready for spaced repetition.' },
+      { slug: 'travel', href: '/travel', label: 'nav.travel', icon: Plane, summary: 'Trips with itinerary, reservations, budget, checklist and calendar blocking.' },
     ],
   },
   {
     label: 'nav.groupIntelligence',
     items: [
       { slug: 'planner', href: '/planner', label: 'nav.planner', icon: Sparkles, summary: 'Describe your week in plain language; the planner proposes a schedule you review and approve.' },
-      { slug: 'analytics', href: '/analytics', label: 'nav.analytics', icon: BarChart3, phase: 4, summary: 'Completion rates, time allocation, habit consistency and planned vs. actual time.' },
+      { slug: 'analytics', href: '/analytics', label: 'nav.analytics', icon: BarChart3, summary: 'Completion rates, time allocation, habit consistency and planned vs. actual time.' },
     ],
   },
   {
